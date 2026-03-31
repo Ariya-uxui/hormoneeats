@@ -62,6 +62,54 @@ const PHASE_FOODS = {
   ],
 }
 
+
+/* ── 7-Day Meal Plan per hormone type ── */
+const MEAL_PLANS_HOME = {
+  estrogen_dominant: [
+    { day:"จันทร์",  b:"โอ๊ตมีล + เมล็ดแฟลกซ์ + เบอรี่",      l:"ปลาแซลมอนอบ + ข้าวกล้อง + บรอกโคลี",  d:"ต้มยำเต้าหู้ + ผักโขมผัด" },
+    { day:"อังคาร",  b:"ไข่ต้ม 2 ฟอง + ขนมปังไรย์",            l:"สลัดผักโขม + วอลนัท",                   d:"ไก่อบสมุนไพร + มันเทศ" },
+    { day:"พุธ",     b:"สมูทตี้ผักโขม + กล้วย",                 l:"ควินัวโบล์ + ผักรวม + เต้าหู้",         d:"แกงส้มผักรวม + ข้าวกล้อง" },
+    { day:"พฤหัส",  b:"กรีกโยเกิร์ต + เมล็ดแฟลกซ์",            l:"ปลาทูน่า + สลัดผัก",                    d:"ผัดผักคะน้า + เนื้อแดง" },
+    { day:"ศุกร์",   b:"ข้าวโอ๊ต + บลูเบอรี่ + อัลมอนด์",       l:"ซุปผักรวม + ข้าวกล้อง",                 d:"ปลาแซลมอนย่าง + บรอกโคลี" },
+    { day:"เสาร์",  b:"แพนเค้กกล้วยไข่ + เบอรี่รวม",            l:"บิบิมบับ",                               d:"ต้มข่าไก่ + ข้าวกล้อง" },
+    { day:"อาทิตย์",b:"อะโวคาโดโทสต์ + ไข่ลวก",                l:"ส้มตำ + ไก่ย่าง",                       d:"มิโซะซุป + ปลาแซลมอน" },
+  ],
+  progesterone_low: [
+    { day:"จันทร์",  b:"กล้วยหอม + เนยอัลมอนด์ + ชาคาโมมายล์", l:"ไก่อบ + มันเทศ + ผักโขม",              d:"ต้มยำกุ้ง + ข้าวกล้อง" },
+    { day:"อังคาร",  b:"โอ๊ตมีล + กล้วย + ดาร์กช็อก",            l:"ถั่วดำ + ข้าวกล้อง + ผักสด",           d:"แกงเขียวหวาน + ข้าวกล้อง" },
+    { day:"พุธ",     b:"ไข่ต้ม + ขนมปังโฮลวีท + ชาขิง",          l:"ปลาทอด + ผัดผักรวม",                   d:"ซุนดูบูจิเก + ข้าว" },
+    { day:"พฤหัส",  b:"กรีกโยเกิร์ต + กล้วย + วอลนัท",           l:"สลัดอะโวคาโด + ปลาทูน่า",              d:"ผัดกะเพราไก่ + ข้าวกล้อง" },
+    { day:"ศุกร์",   b:"สมูทตี้กล้วย + นมโอ๊ต",                  l:"ข้าวหน้าปลาแซลมอน + สลัด",             d:"ต้มข่าไก่ + ข้าวกล้อง" },
+    { day:"เสาร์",  b:"ข้าวโอ๊ต + เมล็ดแฟลกซ์",                  l:"ซัมเกทัง",                              d:"ผักโขมผัดกระเทียม + ไข่" },
+    { day:"อาทิตย์",b:"แพนเค้กกล้วยไข่ + ดาร์กช็อก",             l:"ก๋วยเตี๋ยวน้ำใส + ผักโขม",             d:"ปลาแซลมอนย่าง + มันเทศ" },
+  ],
+  cortisol_high: [
+    { day:"จันทร์",  b:"ชาขมิ้น + โอ๊ตมีล + วอลนัท",             l:"สลัดผักโขม + อะโวคาโด + แซลมอน",      d:"ซุปผักรวม + ข้าวกล้อง" },
+    { day:"อังคาร",  b:"สมูทตี้อะโวคาโด + ชา Ashwagandha",        l:"ไก่อบสมุนไพร + บรอกโคลีนึ่ง",        d:"มิโซะซุป + เต้าหู้เย็น" },
+    { day:"พุธ",     b:"ไข่ต้ม + ขนมปังไรย์ + ชา Chamomile",      l:"ควินัวโบล์ + ถั่วดำ",                  d:"ต้มยำเต้าหู้" },
+    { day:"พฤหัส",  b:"กรีกโยเกิร์ต + บลูเบอรี่ + วอลนัท",       l:"ปลาแซลมอนอบ + มันเทศ",                d:"ผัดผักคะน้า + ไก่" },
+    { day:"ศุกร์",   b:"โอ๊ตมีล + กล้วย + ชาขิง",                 l:"ส้มตำ (ไม่เผ็ดมาก) + ข้าวกล้อง",      d:"แกงจืดเต้าหู้ + ข้าวกล้อง" },
+    { day:"เสาร์",  b:"อะโวคาโดโทสต์ + ชา Ashwagandha",           l:"ชาบู-ชาบู ผักเยอะ",                   d:"ต้มข่าไก่" },
+    { day:"อาทิตย์",b:"สมูทตี้มะม่วง + ขมิ้น",                    l:"ข้าวกล้อง + ไก่ย่าง + ผักโขม",        d:"ซุปผักรวม + ขนมปังโฮลวีท" },
+  ],
+  balanced: [
+    { day:"จันทร์",  b:"โอ๊ตมีล + เบอรี่ + เมล็ดแฟลกซ์",         l:"ปลาแซลมอน + ข้าวกล้อง + ผัก",        d:"ต้มยำกุ้ง + ข้าวกล้อง" },
+    { day:"อังคาร",  b:"ไข่ต้ม + ขนมปังโฮลวีท + อะโวคาโด",       l:"บิบิมบับ + เต้าหู้",                   d:"ไก่อบสมุนไพร + มันเทศ" },
+    { day:"พุธ",     b:"กรีกโยเกิร์ต + กล้วย + วอลนัท",           l:"สลัดผักโขม + ปลาทูน่า",               d:"แกงเขียวหวาน + ข้าวกล้อง" },
+    { day:"พฤหัส",  b:"สมูทตี้เบอรี่ + นมอัลมอนด์",               l:"ซูชิ (8 ชิ้น) + มิโซะซุป",            d:"ผัดผักรวม + ไก่" },
+    { day:"ศุกร์",   b:"ข้าวโอ๊ต + บลูเบอรี่ + อัลมอนด์",         l:"ก๋วยเตี๋ยวน้ำใส + ผักโขม",            d:"ปลาแซลมอนย่าง + บรอกโคลี" },
+    { day:"เสาร์",  b:"แพนเค้กกล้วยไข่ + สตรอว์เบอรี่",           l:"ส้มตำ + ไก่ย่าง + ข้าวกล้อง",        d:"ชาบู-ชาบู ผักเยอะ" },
+    { day:"อาทิตย์",b:"อะโวคาโดโทสต์ + ไข่ลวก",                  l:"ควินัวโบล์ + ถั่วดำ",                  d:"ต้มข่าไก่ + ข้าวกล้อง" },
+  ],
+}
+
+function getTodayMeal(hormoneType) {
+  const plan = MEAL_PLANS_HOME[hormoneType] ?? MEAL_PLANS_HOME.balanced
+  const dayOfWeek = new Date().getDay() // 0=อาทิตย์
+  const idx = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+  return plan[idx]
+}
+
 /* ═══════════════════════════════════════════════════
    SUB-COMPONENTS
 ═══════════════════════════════════════════════════ */
@@ -357,12 +405,106 @@ function AddFoodButton({ onPress }) {
   )
 }
 
+
+/* MoodBanner */
+function MoodBanner({ onPress, tokens }) {
+  let todayMood = null
+  try {
+    const logs = JSON.parse(localStorage.getItem("he_moodlogs") ?? "[]")
+    const today = new Date()
+    const tk = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`
+    todayMood = logs.find(l => l.dateKey === tk)
+  } catch {}
+
+  const MOODS = [
+    { id:"great", emoji:"🤩" }, { id:"good", emoji:"😊" },
+    { id:"neutral", emoji:"😐" }, { id:"tired", emoji:"😔" },
+    { id:"bad", emoji:"😞" },
+  ]
+  const moodEmoji = MOODS.find(m => m.id === todayMood?.mood)?.emoji
+
+  return (
+    <div onClick={onPress} className="fade-up" style={{
+      margin:"10px 16px 0",
+      background: todayMood ? tokens.sageLt : tokens.lavenderLt,
+      border:`1px solid ${todayMood ? "rgba(126,148,132,.3)" : "rgba(187,168,196,.3)"}`,
+      borderRadius:16, padding:"12px 14px",
+      display:"flex", alignItems:"center", justifyContent:"space-between",
+      cursor:"pointer", transition:"all .15s",
+    }}>
+      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+        <span style={{ fontSize:22 }}>{moodEmoji ?? "😊"}</span>
+        <div>
+          <div style={{ fontSize:13, fontWeight:500,
+            color: todayMood ? tokens.sageDk : tokens.lavenderDk }}>
+            {todayMood ? "บันทึกอารมณ์แล้ว ✓" : "บันทึกอารมณ์วันนี้"}
+          </div>
+          <div style={{ fontSize:10, color:tokens.stone, marginTop:2 }}>
+            {todayMood ? "กดเพื่อดูประวัติ" : "Mood & Energy Tracker →"}
+          </div>
+        </div>
+      </div>
+      <span style={{ fontSize:16, color:tokens.stone }}>›</span>
+    </div>
+  )
+}
+
+/* TodayMealCard */
+function TodayMealCard({ hormoneType, tokens }) {
+  const meal = getTodayMeal(hormoneType)
+  if (!meal) return null
+
+  const days = ["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์"]
+  const today = days[new Date().getDay()]
+
+  return (
+    <div className="fade-up" style={{
+      margin:"10px 16px 0",
+      background:tokens.creamSoft,
+      border:`1px solid ${tokens.borderLt}`,
+      borderRadius:20, padding:"14px 16px",
+    }}>
+      <div style={{ display:"flex", justifyContent:"space-between",
+        alignItems:"center", marginBottom:10 }}>
+        <div style={{ fontSize:13, fontWeight:500, color:tokens.cocoa }}>
+          📅 แผนอาหารวัน{today}
+        </div>
+      </div>
+      <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
+        {[
+          { icon:"🌅", label:"เช้า",       val:meal.b },
+          { icon:"☀️", label:"กลางวัน",   val:meal.l },
+          { icon:"🌙", label:"เย็น",       val:meal.d },
+        ].map(m => (
+          <div key={m.label} style={{
+            display:"flex", gap:10, alignItems:"flex-start",
+            padding:"9px 12px",
+            background:tokens.cream,
+            borderRadius:12,
+          }}>
+            <span style={{ fontSize:16, flexShrink:0 }}>{m.icon}</span>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:10, fontWeight:500, color:tokens.stone,
+                letterSpacing:".04em", textTransform:"uppercase", marginBottom:3 }}>
+                {m.label}
+              </div>
+              <div style={{ fontSize:12, color:tokens.cocoaMid, lineHeight:1.45 }}>
+                {m.val}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 /* ═══════════════════════════════════════════════════
    HOME SCREEN — main export
 ═══════════════════════════════════════════════════ */
 export default function Home() {
   const {
-    user, totalCal, foodLog,
+    user, totalCal, todayEntries,
     currentPhase, navTo, toggleCartItem, cartItems, tokens,
   } = useApp()
 
@@ -398,6 +540,12 @@ export default function Home() {
         {/* Insight */}
         <InsightBand phase={currentPhase} />
 
+        {/* Mood Banner */}
+        <MoodBanner onPress={() => navTo("mood")} tokens={tokens} />
+
+        {/* Today Meal Plan */}
+        <TodayMealCard hormoneType={user.hormoneType ?? "balanced"} tokens={tokens} />
+
         {/* Food suggestions */}
         <SectionRow
           title="แนะนำวันนี้"
@@ -415,7 +563,7 @@ export default function Home() {
           title="บันทึกวันนี้"
           action={<AddFoodButton onPress={() => navTo("tracker")} />}
         />
-        <FoodLogList log={foodLog} />
+        <FoodLogList log={todayEntries ?? []} />
 
         {/* Bottom padding */}
         <div style={{ height: 16 }} />
