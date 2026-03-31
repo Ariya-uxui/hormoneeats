@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#F0EDE6" />
+    <meta name="description" content="HormoneEats — กินตามฮอร์โมน ลดน้ำหนักยั่งยืน สุขภาพดีจากข้างใน" />
+
+    <!-- PWA / mobile -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="HormoneEats" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- Open Graph -->
+    <meta property="og:title"       content="HormoneEats" />
+    <meta property="og:description" content="กินตามฮอร์โมน ลดน้ำหนักยั่งยืน" />
+    <meta property="og:type"        content="website" />
+
+    <title>HormoneEats 🌿</title>
+
+    <style>
+      /* Prevent flash of unstyled content */
+      *, *::before, *::after { box-sizing: border-box; }
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #E8E4DC;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      #root {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      /* Loading state */
+      #root:empty::after {
+        content: "🌿";
+        font-size: 48px;
+        animation: pulse 1.2s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1);    }
+        50%       { opacity: .5; transform: scale(.9); }
+      }
+    </style>
+    <script type="module" crossorigin src="/assets/index-CvLS6mvz.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
