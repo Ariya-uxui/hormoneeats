@@ -9,7 +9,7 @@ import Profile      from "./screens/Profile.jsx"
 import Foodcalendar  from "./screens/Foodcalendar.jsx"
 import HormoneQuiz   from "./screens/HormoneQuiz.jsx"
 import MoodTracker   from "./screens/MoodTracker.jsx"
- 
+
 /* ═══════════════════════════════════════════════════
    DESIGN TOKENS — Palette D
 ═══════════════════════════════════════════════════ */
@@ -27,10 +27,10 @@ export const tokens = {
   luteal:"#C4A882",       lutealLt:"#F5EDE0",
   menstrual:"#9EB0C4",    menstrualLt:"#EAF0F5",
 }
- 
+
 export const AppContext = createContext(null)
 export const useApp = () => useContext(AppContext)
- 
+
 /* ═══════════════════════════════════════════════════
    DEFAULT VALUES — used only on first launch
 ═══════════════════════════════════════════════════ */
@@ -40,7 +40,7 @@ const DEFAULT_USER = {
   targetCal:1440, tdee:1740, bmi:19.1,
   currentPhase:"ovulation", cycleDay:14, cycleLength:28,
 }
- 
+
 const DEFAULT_WEIGHT_HISTORY = [
   { date:"27 มี.ค. 68", value:54.0, change:-0.3 },
   { date:"19 มี.ค. 68", value:54.3, change:-0.4 },
@@ -48,12 +48,12 @@ const DEFAULT_WEIGHT_HISTORY = [
   { date:"5 มี.ค. 68",  value:54.9, change:-0.3 },
   { date:"27 ก.พ. 68",  value:55.2, change: null },
 ]
- 
+
 function todayKey() {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`
 }
- 
+
 const DEFAULT_DIARY = {
   [todayKey()]: [
     { id:1, dateKey:todayKey(), emoji:"🥚", name:"ไข่ต้ม + ผักโขมผัด",   cal:320, protein:22, carb:4,  fat:10, meal:"เช้า",    time:"07:15" },
@@ -61,7 +61,7 @@ const DEFAULT_DIARY = {
     { id:3, dateKey:todayKey(), emoji:"🐟", name:"ต้มยำกุ้ง + ข้าวกล้อง", cal:495, protein:28, carb:48, fat:8,  meal:"กลางวัน",time:"12:00" },
   ],
 }
- 
+
 /* ── NAV ── */
 export const NAV_ITEMS = [
   { id:"home",     label:"หน้าหลัก", emoji:"🏠" },
@@ -71,7 +71,7 @@ export const NAV_ITEMS = [
   { id:"weight",   label:"น้ำหนัก",  emoji:"📊" },
   { id:"profile",  label:"โปรไฟล์",  emoji:"👤" },
 ]
- 
+
 /* ── PHASES ── */
 export const PHASES = {
   follicular:{
@@ -103,7 +103,7 @@ export const PHASES = {
     avoid:["ของเย็นจัด","คาเฟอีน","อาหารดิบ"],calRange:"1,450–1,500",
   },
 }
- 
+
 /* ── Global CSS ── */
 const GLOBAL_CSS=`
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
@@ -133,7 +133,7 @@ function injectGlobalCSS(){
   el.id="he-global";el.textContent=GLOBAL_CSS
   document.head.appendChild(el)
 }
- 
+
 /* ── Phone shell ── */
 function PhoneShell({children}){
   const[time,setTime]=useState("")
@@ -162,7 +162,7 @@ function PhoneShell({children}){
     </div>
   )
 }
- 
+
 /* ── Bottom nav ── */
 function BottomNav({current,onChange}){
   return(
@@ -197,7 +197,7 @@ function BottomNav({current,onChange}){
     </nav>
   )
 }
- 
+
 /* ── Toast ── */
 function Toast({message,visible}){
   return(
@@ -210,7 +210,7 @@ function Toast({message,visible}){
     </div>
   )
 }
- 
+
 /* ── Screen wrapper ── */
 export function ScreenWrapper({children,style={}}){
   return(
@@ -220,35 +220,35 @@ export function ScreenWrapper({children,style={}}){
     </div>
   )
 }
- 
+
 /* ═══════════════════════════════════════════════════
    APP ROOT — all state persisted via useLocalStorage
 ═══════════════════════════════════════════════════ */
 export default function App(){
   injectGlobalCSS()
- 
+
   /* ── Navigation (session only — intentional) ── */
   const [screen, setScreen] = useState("quiz")
- 
+
   /* ── Persistent state ── */
   const [user,          setUser         ] = useLocalStorage(STORAGE_KEYS.user,          DEFAULT_USER)
   const [weightHistory, setWeightHistory] = useLocalStorage(STORAGE_KEYS.weightHistory, DEFAULT_WEIGHT_HISTORY)
   const [foodLog,       setFoodLog      ] = useLocalStorage(STORAGE_KEYS.foodLog,       [])
   const [cartItems,     setCartItems    ] = useLocalStorage(STORAGE_KEYS.cartItems,     [])
   const [diary,         setDiary        ] = useLocalStorage(STORAGE_KEYS.diary,         DEFAULT_DIARY)
- 
+
   /* ── Toast ── */
   const [toast,    setToast   ] = useState({ msg:"", visible:false })
   const toastTimer              = useRef(null)
- 
+
   function showToast(msg){
     clearTimeout(toastTimer.current)
     setToast({ msg, visible:true })
     toastTimer.current = setTimeout(()=>setToast(t=>({...t,visible:false})), 2200)
   }
- 
+
   function navTo(id){ if(id!==screen) setScreen(id) }
- 
+
   /* ── Quiz complete → save hormone type → onboarding ── */
   function handleQuizComplete({ hormoneType, recommendedPhase }) {
     setUser(u => ({
@@ -258,7 +258,7 @@ export default function App(){
     }))
     setScreen("onboarding")
   }
- 
+
   /* ── Log weight ── */
   function logWeight(value){
     const prev   = weightHistory[0]?.value ?? user.weight
@@ -270,21 +270,21 @@ export default function App(){
     setUser(u=>({ ...u, weight:value }))
     showToast(`บันทึกน้ำหนัก ${value.toFixed(1)} กก. แล้ว ✓`)
   }
- 
+
   /* ════════════════════════════════════════════════
      SINGLE SOURCE OF TRUTH: diary
      ทั้ง Tracker และ Calendar เขียน/อ่าน diary เดียวกัน
      cartItems ยังคงอยู่สำหรับ UI "เลือกอาหาร" ใน Tracker
      แต่เมื่อ toggle → sync ลง diary[today] ทันที
   ════════════════════════════════════════════════ */
- 
+
   /* ── Toggle cart + sync to diary[today] ── */
   function toggleCartItem(food){
     const tk  = todayKey()
     const now = new Date()
     const hh  = String(now.getHours()).padStart(2,"0")
     const mm  = String(now.getMinutes()).padStart(2,"0")
- 
+
     setCartItems(prev=>{
       const exists = prev.find(f=>f.name===food.name)
       if(exists){
@@ -319,7 +319,7 @@ export default function App(){
       return [...prev, food]
     })
   }
- 
+
   /* ── Diary entries (Calendar) ── */
   function addDiaryEntry(entry){
     setDiary(prev=>({
@@ -344,14 +344,14 @@ export default function App(){
     })
     showToast("ลบรายการแล้ว")
   }
- 
+
   /* ── Computed totals — อ่านจาก diary[today] อย่างเดียว ── */
   const todayEntries = diary[todayKey()] ?? []
   const totalCal     = todayEntries.reduce((s,f)=>s+f.cal,             0)
   const totalProtein = todayEntries.reduce((s,f)=>s+(f.protein??0),    0)
   const totalCarb    = todayEntries.reduce((s,f)=>s+(f.carb??0),       0)
   const totalFat     = todayEntries.reduce((s,f)=>s+(f.fat??0),        0)
- 
+
   /* ── Context ── */
   const ctx = {
     user, setUser,
@@ -365,7 +365,7 @@ export default function App(){
     currentPhase: PHASES[user.currentPhase] ?? PHASES.ovulation,
     PHASES, tokens,
   }
- 
+
   const screens = {
     home:     <Home />,
     calendar: <Foodcalendar />,
@@ -374,7 +374,7 @@ export default function App(){
     weight:   <Weight />,
     profile:  <Profile />,
   }
- 
+
   return(
     <AppContext.Provider value={ctx}>
       <PhoneShell>
