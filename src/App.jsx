@@ -104,7 +104,6 @@ export const PHASES = {
 
 /* ── Global CSS ── */
 const GLOBAL_CSS=`
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body,#root{height:100%;overflow:hidden}
   body{font-family:'DM Sans',sans-serif;background:#E8E4DC;display:flex;align-items:center;justify-content:center}
