@@ -1,5 +1,5 @@
 import { useApp, ScreenWrapper } from "../App.jsx"
-
+ 
 /* ═══════════════════════════════════════════════════
    HOME SCREEN
    Layout (from wireframe):
@@ -17,7 +17,7 @@ import { useApp, ScreenWrapper } from "../App.jsx"
    │  today's food entries                            │
    └─────────────────────────────────────────────────┘
 ═══════════════════════════════════════════════════ */
-
+ 
 /* ── Greeting helper ── */
 function getGreeting() {
   const h = new Date().getHours()
@@ -25,7 +25,7 @@ function getGreeting() {
   if (h < 17) return "สวัสดีตอนบ่าย ☀️"
   return "สวัสดีตอนเย็น 🌙"
 }
-
+ 
 /* ── Suggested foods per phase ── */
 const PHASE_FOODS = {
   follicular: [
@@ -61,8 +61,8 @@ const PHASE_FOODS = {
     { emoji: "🍖", name: "ตับไก่",        cal: 167 },
   ],
 }
-
-
+ 
+ 
 /* ── 7-Day Meal Plan per hormone type ── */
 const MEAL_PLANS_HOME = {
   estrogen_dominant: [
@@ -102,18 +102,18 @@ const MEAL_PLANS_HOME = {
     { day:"อาทิตย์",b:"อะโวคาโดโทสต์ + ไข่ลวก",                  l:"ควินัวโบล์ + ถั่วดำ",                  d:"ต้มข่าไก่ + ข้าวกล้อง" },
   ],
 }
-
+ 
 function getTodayMeal(hormoneType) {
   const plan = MEAL_PLANS_HOME[hormoneType] ?? MEAL_PLANS_HOME.balanced
   const dayOfWeek = new Date().getDay() // 0=อาทิตย์
   const idx = dayOfWeek === 0 ? 6 : dayOfWeek - 1
   return plan[idx]
 }
-
+ 
 /* ═══════════════════════════════════════════════════
    SUB-COMPONENTS
 ═══════════════════════════════════════════════════ */
-
+ 
 /* TopBar */
 function TopBar({ user }) {
   const { tokens } = useApp()
@@ -149,7 +149,7 @@ function TopBar({ user }) {
     </div>
   )
 }
-
+ 
 /* PhaseBanner */
 function PhaseBanner({ phase, cycleDay, onPress }) {
   const { tokens } = useApp()
@@ -209,21 +209,21 @@ function PhaseBanner({ phase, cycleDay, onPress }) {
     </div>
   )
 }
-
+ 
 /* StatsStrip */
 function StatsStrip({ totalCal, targetCal, weight }) {
   const { tokens } = useApp()
-
+ 
   const dayScore = Math.min(100, Math.max(0,
     Math.round(100 - Math.abs(totalCal - targetCal) / targetCal * 60)
   ))
-
+ 
   const stats = [
     { value: totalCal.toLocaleString(), label: "kcal วันนี้" },
     { value: weight.toFixed(1), label: "น้ำหนัก (กก.)", unit: "" },
     { value: dayScore, label: "คะแนนวัน", accent: tokens.sageDk },
   ]
-
+ 
   return (
     <div className="fade-up" style={{
       display: "grid", gridTemplateColumns: "repeat(3,1fr)",
@@ -251,18 +251,18 @@ function StatsStrip({ totalCal, targetCal, weight }) {
     </div>
   )
 }
-
+ 
 /* InsightBand */
 function InsightBand({ phase }) {
   const { tokens } = useApp()
-
+ 
   const insights = {
     ovulation: "กินโปรตีนสูง + ผักใบเขียว ช่วยขับ Estrogen ส่วนเกิน แขนจะดูกระชับใน 1 สัปดาห์",
     follicular: "ช่วงนี้ร่างกายไวต่อ Insulin มาก หลีกเลี่ยงน้ำตาลเพื่อ maximize การลดไขมัน",
     luteal: "อยากหวานคือสัญญาณ Progesterone สูง ลองกล้วยหรือดาร์กช็อกแทนขนมหวาน",
     menstrual: "เพิ่มธาตุเหล็กจากผักโขมและตับ เพื่อชดเชยที่ร่างกายสูญเสียไป",
   }
-
+ 
   return (
     <div className="fade-up" style={{
       margin: "10px 16px 0",
@@ -283,7 +283,7 @@ function InsightBand({ phase }) {
     </div>
   )
 }
-
+ 
 /* SectionRow */
 function SectionRow({ title, action, onAction }) {
   const { tokens } = useApp()
@@ -304,7 +304,7 @@ function SectionRow({ title, action, onAction }) {
     </div>
   )
 }
-
+ 
 /* FoodRail */
 function FoodRail({ foods, pickedNames, onPick }) {
   const { tokens } = useApp()
@@ -344,7 +344,7 @@ function FoodRail({ foods, pickedNames, onPick }) {
     </div>
   )
 }
-
+ 
 /* FoodLogList */
 function FoodLogList({ log }) {
   const { tokens } = useApp()
@@ -384,7 +384,7 @@ function FoodLogList({ log }) {
     </div>
   )
 }
-
+ 
 /* AddFoodButton */
 function AddFoodButton({ onPress }) {
   const { tokens } = useApp()
@@ -404,8 +404,8 @@ function AddFoodButton({ onPress }) {
     </span>
   )
 }
-
-
+ 
+ 
 /* MoodBanner */
 function MoodBanner({ onPress, tokens }) {
   let todayMood = null
@@ -415,14 +415,14 @@ function MoodBanner({ onPress, tokens }) {
     const tk = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`
     todayMood = logs.find(l => l.dateKey === tk)
   } catch {}
-
+ 
   const MOODS = [
     { id:"great", emoji:"🤩" }, { id:"good", emoji:"😊" },
     { id:"neutral", emoji:"😐" }, { id:"tired", emoji:"😔" },
     { id:"bad", emoji:"😞" },
   ]
   const moodEmoji = MOODS.find(m => m.id === todayMood?.mood)?.emoji
-
+ 
   return (
     <div onClick={onPress} className="fade-up" style={{
       margin:"10px 16px 0",
@@ -448,15 +448,15 @@ function MoodBanner({ onPress, tokens }) {
     </div>
   )
 }
-
+ 
 /* TodayMealCard */
 function TodayMealCard({ hormoneType, tokens }) {
   const meal = getTodayMeal(hormoneType)
   if (!meal) return null
-
+ 
   const days = ["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์"]
   const today = days[new Date().getDay()]
-
+ 
   return (
     <div className="fade-up" style={{
       margin:"10px 16px 0",
@@ -498,7 +498,7 @@ function TodayMealCard({ hormoneType, tokens }) {
     </div>
   )
 }
-
+ 
 /* ═══════════════════════════════════════════════════
    HOME SCREEN — main export
 ═══════════════════════════════════════════════════ */
@@ -507,45 +507,45 @@ export default function Home() {
     user, totalCal, todayEntries,
     currentPhase, navTo, toggleCartItem, cartItems, tokens,
   } = useApp()
-
+ 
   const suggestedFoods = PHASE_FOODS[user.currentPhase] ?? PHASE_FOODS.ovulation
   const pickedNames = cartItems.map(f => f.name)
-
+ 
   function handlePickFood(food) {
     toggleCartItem(food)
   }
-
+ 
   return (
     <ScreenWrapper>
       {/* ── Header ── */}
       <TopBar user={user} />
-
+ 
       {/* ── Scrollable body ── */}
       <div className="scroll-body" style={{ flex: 1, paddingBottom: 90 }}>
-
+ 
         {/* Phase Banner */}
         <PhaseBanner
           phase={currentPhase}
           cycleDay={user.cycleDay}
           onPress={() => navTo("phases")}
         />
-
+ 
         {/* Stats */}
         <StatsStrip
           totalCal={totalCal}
           targetCal={user.targetCal}
           weight={user.weight}
         />
-
+ 
         {/* Insight */}
         <InsightBand phase={currentPhase} />
-
+ 
         {/* Mood Banner */}
         <MoodBanner onPress={() => navTo("mood")} tokens={tokens} />
-
+ 
         {/* Today Meal Plan */}
         <TodayMealCard hormoneType={user.hormoneType ?? "balanced"} tokens={tokens} />
-
+ 
         {/* Food suggestions */}
         <SectionRow
           title="แนะนำวันนี้"
@@ -557,14 +557,14 @@ export default function Home() {
           pickedNames={pickedNames}
           onPick={handlePickFood}
         />
-
+ 
         {/* Food log */}
         <SectionRow
           title="บันทึกวันนี้"
           action={<AddFoodButton onPress={() => navTo("tracker")} />}
         />
         <FoodLogList log={todayEntries ?? []} />
-
+ 
         {/* Bottom padding */}
         <div style={{ height: 16 }} />
       </div>
