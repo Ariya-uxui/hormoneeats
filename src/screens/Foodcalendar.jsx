@@ -242,6 +242,7 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
           )}
         </div>
 
+        {/* ── STICKY SAVE BUTTON for custom tab ── */}
         {tab==="custom" && (
           <div style={{
             padding:"10px 16px 16px",
