@@ -238,19 +238,32 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
                 style={{padding:"9px 14px",border:`1px solid ${tokens.border}`,borderRadius:12,
                   fontSize:13,fontFamily:"'DM Sans',sans-serif",
                   color:tokens.cocoa,background:tokens.cream,outline:"none"}}/>
-              <button onClick={handleCustomAdd}
-                disabled={!custom.name.trim()||!custom.cal}
-                style={{padding:"12px",
-                  background:custom.name.trim()&&custom.cal?tokens.cocoa:tokens.border,
-                  color:custom.name.trim()&&custom.cal?tokens.cream:tokens.stone,
-                  border:"none",borderRadius:14,fontSize:14,fontWeight:500,
-                  fontFamily:"'DM Sans',sans-serif",
-                  cursor:custom.name.trim()&&custom.cal?"pointer":"default"}}>
-                เพิ่มอาหาร →
-              </button>
             </div>
           )}
         </div>
+
+        {tab==="custom" && (
+          <div style={{
+            padding:"10px 16px 16px",
+            borderTop:`1px solid ${tokens.borderLt}`,
+            background:tokens.creamSoft,
+            flexShrink:0,
+          }}>
+            <button onClick={handleCustomAdd}
+              disabled={!custom.name.trim()||!custom.cal}
+              style={{
+                width:"100%", padding:"13px",
+                background:custom.name.trim()&&custom.cal?tokens.cocoa:tokens.border,
+                color:custom.name.trim()&&custom.cal?tokens.cream:tokens.stone,
+                border:"none",borderRadius:14,fontSize:14,fontWeight:500,
+                fontFamily:"'DM Sans',sans-serif",
+                cursor:custom.name.trim()&&custom.cal?"pointer":"default",
+              }}>
+              💾 เพิ่มอาหาร
+            </button>
+          </div>
+        )}
+
       </div>
     </div>
   )
