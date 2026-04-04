@@ -353,7 +353,7 @@ function QuestionCard({ q, qIndex, total, selected, onSelect, tokens }) {
 /* ═══════════════════════════════════════════════════
    RESULT SCREEN
 ═══════════════════════════════════════════════════ */
-function ResultScreen({ hormoneType, scores, onFinish, tokens }) {
+function ResultScreen({ hormoneType, scores, onFinish, tokens, lang }) {
   const [showPlan, setShowPlan] = useState(false)
   const result   = HORMONE_TYPES[hormoneType]
   const plan     = MEAL_PLANS[hormoneType]
@@ -724,6 +724,7 @@ export default function HormoneQuiz({ onComplete }) {
           scores={scores}
           onFinish={handleFinish}
           tokens={tokens}
+          lang={lang}
         />
       )}
 
