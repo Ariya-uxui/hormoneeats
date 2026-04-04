@@ -12,6 +12,71 @@ import { useApp } from "../App.jsx"
    D = Balanced            (สมดุล)
 ═══════════════════════════════════════════════════ */
 
+
+/* ── Quiz Questions (EN) ── */
+const QUESTIONS_EN = [
+  {
+    id: 1, emoji: "🩸", topic: "Cycle / PMS",
+    question: "How do you feel before and during your period?",
+    options: [
+      { text: "Water retention, mood swings, breast tenderness",  scores: { estrogen: 3, progesterone: 0, cortisol: 1 } },
+      { text: "Anxiety, insomnia, frequent headaches",            scores: { estrogen: 0, progesterone: 3, cortisol: 2 } },
+      { text: "High stress, severe cramps, fatigue",              scores: { estrogen: 1, progesterone: 1, cortisol: 3 } },
+      { text: "Mild symptoms, regular cycle, feel good overall",  scores: { estrogen: 0, progesterone: 0, cortisol: 0 } },
+    ],
+  },
+  {
+    id: 2, emoji: "🍽️", topic: "Eating Habits",
+    question: "What do you crave most before your period?",
+    options: [
+      { text: "Sweets, chocolate, sugary snacks",                scores: { estrogen: 1, progesterone: 2, cortisol: 1 } },
+      { text: "Salty, fried, or fast food",                      scores: { estrogen: 2, progesterone: 0, cortisol: 2 } },
+      { text: "Everything — unusually hungry all the time",      scores: { estrogen: 1, progesterone: 3, cortisol: 1 } },
+      { text: "No special cravings, eating normally",            scores: { estrogen: 0, progesterone: 0, cortisol: 0 } },
+    ],
+  },
+  {
+    id: 3, emoji: "💪", topic: "Energy / Exercise",
+    question: "How would you describe your energy and motivation to exercise?",
+    options: [
+      { text: "Constantly fatigued, rarely exercise",            scores: { estrogen: 1, progesterone: 2, cortisol: 2 } },
+      { text: "Energy fluctuates — up and down unpredictably",   scores: { estrogen: 2, progesterone: 1, cortisol: 2 } },
+      { text: "Easily tired even after enough sleep",            scores: { estrogen: 1, progesterone: 1, cortisol: 3 } },
+      { text: "Good energy, exercise regularly",                 scores: { estrogen: 0, progesterone: 0, cortisol: 0 } },
+    ],
+  },
+  {
+    id: 4, emoji: "😴", topic: "Sleep / Stress",
+    question: "Do you have trouble sleeping or managing stress?",
+    options: [
+      { text: "Hard to fall asleep, wake up at night, overthinking", scores: { estrogen: 1, progesterone: 2, cortisol: 3 } },
+      { text: "Sleep but wake up unrefreshed and tired",             scores: { estrogen: 1, progesterone: 1, cortisol: 2 } },
+      { text: "High work stress, often feel burned out",             scores: { estrogen: 0, progesterone: 1, cortisol: 3 } },
+      { text: "Sleep well, stress is manageable",                    scores: { estrogen: 0, progesterone: 0, cortisol: 0 } },
+    ],
+  },
+  {
+    id: 5, emoji: "⚖️", topic: "Weight / Body",
+    question: "How has your weight or body shape been changing?",
+    options: [
+      { text: "Gaining around hips, thighs, and lower belly",    scores: { estrogen: 3, progesterone: 0, cortisol: 1 } },
+      { text: "Bloating and sudden water weight gain",           scores: { estrogen: 1, progesterone: 2, cortisol: 1 } },
+      { text: "Fat accumulating around the belly area",          scores: { estrogen: 1, progesterone: 1, cortisol: 3 } },
+      { text: "Weight is fairly stable, no major issues",        scores: { estrogen: 0, progesterone: 0, cortisol: 0 } },
+    ],
+  },
+  {
+    id: 6, emoji: "🌿", topic: "Overall Health",
+    question: "Which symptoms do you experience most often?",
+    options: [
+      { text: "Oily skin, hormonal acne, some hair loss",        scores: { estrogen: 3, progesterone: 1, cortisol: 1 } },
+      { text: "Heart palpitations, cold hands, easily anxious",  scores: { estrogen: 0, progesterone: 2, cortisol: 3 } },
+      { text: "Brain fog, poor memory, difficulty focusing",     scores: { estrogen: 2, progesterone: 2, cortisol: 2 } },
+      { text: "Generally healthy, no obvious symptoms",          scores: { estrogen: 0, progesterone: 0, cortisol: 0 } },
+    ],
+  },
+]
+
 /* ── Quiz Questions ── */
 const QUESTIONS = [
   {
@@ -447,10 +512,10 @@ function ResultScreen({ hormoneType, scores, onFinish, tokens }) {
           onMouseDown={e=>e.currentTarget.style.opacity=".8"}
           onMouseUp={e=>e.currentTarget.style.opacity="1"}
         >
-          เริ่มใช้ HormoneEats →
+          {lang==="en" ? "Start HormoneEats →" : "เริ่มใช้ HormoneEats →"}
         </button>
         <div style={{ textAlign:"center", fontSize:11, color:tokens.stone, marginTop:8 }}>
-          ผลจะถูกบันทึกไว้ในโปรไฟล์ของคุณ
+          {lang==="en" ? "Results saved to your profile" : "ผลจะถูกบันทึกไว้ในโปรไฟล์ของคุณ"}
         </div>
       </div>
     </div>
@@ -462,6 +527,7 @@ function ResultScreen({ hormoneType, scores, onFinish, tokens }) {
 ═══════════════════════════════════════════════════ */
 export default function HormoneQuiz({ onComplete }) {
   const { tokens } = useApp()
+  const [lang, setLang] = useState("th")
 
   const [step,     setStep    ] = useState("intro") // intro | quiz | result
   const [qIndex,   setQIndex  ] = useState(0)
@@ -469,7 +535,8 @@ export default function HormoneQuiz({ onComplete }) {
   const [scores,   setScores  ] = useState({ estrogen:0, progesterone:0, cortisol:0 })
   const [hormoneType, setHormoneType] = useState(null)
 
-  const currentQ = QUESTIONS[qIndex]
+  const activeQs = lang==="en" ? QUESTIONS_EN : QUESTIONS
+  const currentQ = activeQs[qIndex]
   const selected = answers[currentQ?.id]
 
   function handleSelect(optionIndex) {
@@ -486,7 +553,7 @@ export default function HormoneQuiz({ onComplete }) {
     }
     setScores(newScores)
 
-    if (qIndex < QUESTIONS.length - 1) {
+    if (qIndex < activeQs.length - 1) {
       setQIndex(i => i + 1)
     } else {
       /* calculate result */
@@ -518,6 +585,22 @@ export default function HormoneQuiz({ onComplete }) {
         <div style={{ flex:1, display:"flex", flexDirection:"column",
           alignItems:"center", justifyContent:"center",
           padding:"40px 28px", textAlign:"center" }}>
+          {/* Lang toggle */}
+          <div style={{ display:"flex", gap:0, background:tokens.cream, border:`1px solid ${tokens.border}`, borderRadius:999, overflow:"hidden", marginBottom:20 }}>
+            {["th","en"].map(l => (
+              <button key={l} onClick={() => setLang(l)} style={{
+                padding:"6px 16px",
+                background: lang===l ? tokens.cocoa : "transparent",
+                color:      lang===l ? tokens.cream  : tokens.stone,
+                border:"none", cursor:"pointer",
+                fontSize:12, fontWeight:500,
+                fontFamily:"'DM Sans',sans-serif",
+                transition:"all .2s",
+              }}>
+                {l==="th" ? "🇹🇭 TH" : "🇬🇧 EN"}
+              </button>
+            ))}
+          </div>
           <div style={{ fontSize:64, marginBottom:20 }}>🌿</div>
           <div style={{ fontFamily:"'Playfair Display',serif",
             fontSize:28, color:tokens.cocoa, marginBottom:12, lineHeight:1.3 }}>
@@ -525,8 +608,10 @@ export default function HormoneQuiz({ onComplete }) {
           </div>
           <div style={{ fontSize:14, color:tokens.stone, lineHeight:1.75,
             marginBottom:32, maxWidth:280 }}>
-            ตอบ {QUESTIONS.length} คำถาม เพื่อค้นหาประเภทฮอร์โมนของคุณ
-            และรับแผนอาหาร 7 วันที่เหมาะกับร่างกาย
+            {lang==="en"
+              ? `Answer ${QUESTIONS_EN.length} questions to discover your hormone type and get a personalized 7-day meal plan.`
+              : `ตอบ ${QUESTIONS.length} คำถาม เพื่อค้นหาประเภทฮอร์โมนของคุณ และรับแผนอาหาร 7 วันที่เหมาะกับร่างกาย`
+            }
           </div>
 
           {/* Principles preview */}
@@ -535,15 +620,21 @@ export default function HormoneQuiz({ onComplete }) {
             padding:"14px 16px", marginBottom:28, textAlign:"left" }}>
             <div style={{ fontSize:11, fontWeight:500, color:tokens.stone,
               letterSpacing:".06em", marginBottom:10 }}>
-              หลักการ Hormone Balance Diet
+              {lang==="en" ? "Hormone Balance Diet Principles" : "หลักการ Hormone Balance Diet"}
             </div>
-            {[
+            {(lang==="en" ? [
+              { icon:"🥩", text:"Adequate protein → builds hormones, stabilizes blood sugar" },
+              { icon:"🥦", text:"High fiber → supports gut health, flushes excess hormones" },
+              { icon:"🥑", text:"Healthy fats → support sex hormone production" },
+              { icon:"🚫", text:"Avoid sugar → reduces insulin resistance" },
+              { icon:"🌱", text:"Gut health → balanced gut = balanced hormones" },
+            ] : [
               { icon:"🥩", text:"โปรตีนเพียงพอ → สร้างฮอร์โมน, รักษาน้ำตาลในเลือด" },
               { icon:"🥦", text:"ไฟเบอร์สูง → ช่วยลำไส้, ลดฮอร์โมนส่วนเกิน" },
               { icon:"🥑", text:"ไขมันดี → สนับสนุนการผลิตฮอร์โมนเพศ" },
               { icon:"🚫", text:"หลีกเลี่ยงน้ำตาล → ลดดื้อ Insulin" },
               { icon:"🌱", text:"ดูแลลำไส้ → ลำไส้ดี = ฮอร์โมนสมดุล" },
-            ].map(p => (
+            ]).map(p => (
               <div key={p.text} style={{ display:"flex", gap:8, marginBottom:6,
                 alignItems:"flex-start" }}>
                 <span style={{ fontSize:14, flexShrink:0 }}>{p.icon}</span>
@@ -562,7 +653,7 @@ export default function HormoneQuiz({ onComplete }) {
             onMouseDown={e=>e.currentTarget.style.opacity=".8"}
             onMouseUp={e=>e.currentTarget.style.opacity="1"}
           >
-            เริ่มทำ Quiz →
+            {lang==="en" ? "Start Quiz →" : "เริ่มทำ Quiz →"}
           </button>
         </div>
       )}
@@ -620,7 +711,7 @@ export default function HormoneQuiz({ onComplete }) {
               onMouseDown={e=>selected!==undefined&&(e.currentTarget.style.opacity=".8")}
               onMouseUp={e=>e.currentTarget.style.opacity="1"}
             >
-              {qIndex < QUESTIONS.length - 1 ? "ถัดไป →" : "ดูผลลัพธ์ →"}
+              {lang==="en" ? (qIndex < activeQs.length-1 ? "Next →" : "See Results →") : (qIndex < activeQs.length-1 ? "ถัดไป →" : "ดูผลลัพธ์ →")}
             </button>
           </div>
         </div>

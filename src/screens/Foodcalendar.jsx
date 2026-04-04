@@ -97,9 +97,10 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
     }}>
       <div onClick={e=>e.stopPropagation()} style={{
         width:"100%",background:tokens.creamSoft,
-        borderRadius:"24px 24px 0 0",maxHeight:"92%",minHeight:"60%",
+        borderRadius:"24px 24px 0 0",maxHeight:"80%",
         display:"flex",flexDirection:"column",
         animation:"slideUp .25s ease both",
+        marginBottom:"82px",
       }}>
         {/* header */}
         <div style={{
@@ -551,7 +552,7 @@ export default function Foodcalendar() {
         <div style={{fontSize:12,color:tokens.stone}}>บันทึกอาหารรายวัน · แคลอรี่ต่อวัน</div>
       </div>
 
-      <div className="scroll-body" style={{flex:1,paddingBottom:90}}>
+      <div className="scroll-body" style={{flex:1,paddingBottom:160}}>
 
         {/* Month navigator */}
         <div className="fade-up" style={{display:"flex",justifyContent:"space-between",
