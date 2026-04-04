@@ -97,7 +97,7 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
     }}>
       <div onClick={e=>e.stopPropagation()} style={{
         width:"100%",background:tokens.creamSoft,
-        borderRadius:"24px 24px 0 0",maxHeight:"80%",
+        borderRadius:"24px 24px 0 0",maxHeight:"92%",minHeight:"60%",
         display:"flex",flexDirection:"column",
         animation:"slideUp .25s ease both",
       }}>
@@ -144,7 +144,7 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
         </div>
 
         {/* content */}
-        <div style={{flex:1,overflow:"auto",padding:"0 16px 16px"}}>
+        <div style={{flex:1,overflow:"auto",padding:"0 16px 80px"}}>
           {tab==="db" ? (
             <>
               {/* search */}
@@ -242,7 +242,6 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
           )}
         </div>
 
-        {/* ── STICKY SAVE BUTTON for custom tab ── */}
         {tab==="custom" && (
           <div style={{
             padding:"10px 16px 16px",
