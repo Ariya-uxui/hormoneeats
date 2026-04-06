@@ -7,6 +7,7 @@ import { FOOD_DB, CUISINES, searchFoods } from "../data/foodDatabase.js"
    (diary is persisted via localStorage in App.jsx)
 ═══════════════════════════════════════════════════ */
  
+const THAI_MONTHS_EN = ["January","February","March","April","May","June","July","August","September","October","November","December"]
 const THAI_MONTHS_FULL = [
   "มกราคม","กุมภาพันธ์","มีนาคม","เมษายน",
   "พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม",
@@ -156,7 +157,7 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
                 <span style={{position:"absolute",left:10,top:"50%",
                   transform:"translateY(-50%)",fontSize:12,pointerEvents:"none"}}>🔍</span>
                 <input type="text" value={search} onChange={e=>setSearch(e.target.value)}
-                  placeholder="ค้นหา... ไทย / Japanese / Korean"
+                  placeholder={lang==="en" ? "Search... Thai / Japanese / Korean" : "ค้นหา... ไทย / Japanese / Korean"}
                   style={{width:"100%",padding:"9px 10px 9px 30px",
                     border:`1px solid ${tokens.border}`,borderRadius:12,
                     fontSize:13,fontFamily:"'DM Sans',sans-serif",
@@ -395,7 +396,7 @@ function DaySummary({ dateKey, entries, targetCal, tokens }) {
       <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:10}}>
         <span style={{color:tokens.stone}}>{pct}% ของเป้าหมาย</span>
         <span style={{fontWeight:500,color:remaining>=0?tokens.sageDk:"#8B4050"}}>
-          {remaining>=0?`เหลือ ${remaining.toLocaleString()} kcal`:`เกิน ${Math.abs(remaining).toLocaleString()} kcal`}
+          {remaining>=0 ? `${lang==="en"?"Left":"เหลือ"} ${remaining.toLocaleString()} kcal` : `${lang==="en"?"Over":"เกิน"} ${Math.abs(remaining).toLocaleString()} kcal`}
         </span>
       </div>
       {(totalP>0||totalC>0||totalF>0)&&(
@@ -431,7 +432,7 @@ function FoodEntryList({ dateKey, entries, onDelete, tokens }) {const { t } = us
   }
   const byMeal = {}
   entries.forEach(e=>{
-    const k = e.meal||"อื่นๆ"
+    const k = e.meal||(typeof lang!=="undefined"&&lang==="en"?"Other":"อื่นๆ")
     if(!byMeal[k]) byMeal[k]=[]
     byMeal[k].push(e)
   })
@@ -567,7 +568,7 @@ export default function Foodcalendar() {
             padding:"6px 12px",fontSize:16,color:tokens.stone,cursor:"pointer"}}>‹</button>
           <div style={{textAlign:"center"}}>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:tokens.cocoa}}>
-              {THAI_MONTHS_FULL[viewMonth]}
+              {lang==="en" ? THAI_MONTHS_EN[viewMonth] : THAI_MONTHS_FULL[viewMonth]}
             </div>
             <div style={{fontSize:11,color:tokens.stone,marginTop:2}}>{viewYear+543}</div>
           </div>

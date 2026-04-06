@@ -92,7 +92,7 @@ function MacroBars({ protein, carb, fat, tokens }) {
  
 /* ── Today's Food Log (from diary) ── */
 function TodayLog({ entries, onDelete, totalCal, targetCal, tokens }) {
-  const { t } = useApp()
+  const { t, lang } = useApp()
   if (entries.length === 0) return null
  
   const remaining = targetCal - totalCal
@@ -102,7 +102,7 @@ function TodayLog({ entries, onDelete, totalCal, targetCal, tokens }) {
   /* group by meal */
   const byMeal = {}
   entries.forEach(e => {
-    const k = e.meal || "อื่นๆ"
+    const k = e.meal || (lang==="en" ? "Other" : "อื่นๆ")
     if (!byMeal[k]) byMeal[k] = []
     byMeal[k].push(e)
   })
@@ -328,7 +328,7 @@ export default function Tracker() {
           <span style={{ color: remaining > 0 ? tokens.sageDk : "#8B4050" }}>
             {remaining > 0
               ? `${t("tracker.remaining")} ${remaining.toLocaleString()} kcal`
-              : `เกิน ${Math.abs(remaining).toLocaleString()} kcal`}
+              : `${lang==="en" ? "Over" : "เกิน"} ${Math.abs(remaining).toLocaleString()} kcal`}
           </span>
         </div>
       </div>
@@ -431,11 +431,11 @@ export default function Tracker() {
               fontSize:12, fontWeight:500,
               color: showPhaseOnly ? currentPhase.textClr : tokens.stone,
             }}>
-              {currentPhase.emoji} แสดงเฉพาะเมนูเฟส {currentPhase.label}
+              {currentPhase.emoji} {lang==="en" ? `${currentPhase.label} phase only` : `แสดงเฉพาะเมนูเฟส ${currentPhase.label}`}
             </span>
           </div>
           <span style={{ fontSize:11, color:tokens.stone }}>
-            {filtered.length} รายการ
+            {filtered.length} {lang==="en" ? "items" : "รายการ"}
           </span>
         </div>
  

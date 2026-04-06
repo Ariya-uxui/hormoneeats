@@ -18,13 +18,7 @@ import { useApp, ScreenWrapper } from "../App.jsx"
    └─────────────────────────────────────────────────┘
 ═══════════════════════════════════════════════════ */
  
-/* ── Greeting helper ── */
-function getGreeting() {
-  const h = new Date().getHours()
-  if (h < 12) return "สวัสดีตอนเช้า 🌸"
-  if (h < 17) return "สวัสดีตอนบ่าย ☀️"
-  return "สวัสดีตอนเย็น 🌙"
-}
+/* ── Greeting helper removed - using t() in TopBar ── */
  
 /* ── Suggested foods per phase ── */
 const PHASE_FOODS = {
