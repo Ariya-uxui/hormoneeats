@@ -56,7 +56,7 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
   const [meal,    setMeal   ] = useState(MEAL_SLOTS_TH[0])
   const [search,  setSearch ] = useState("")
   const [cuisine, setCuisine] = useState("all")
-  const [tab,     setTab    ] = useState("db")
+  const [activeTab, setActiveTab] = useState("db")
   const [custom,  setCustom ] = useState({ name:"", cal:"", emoji:"🍽️" })
  
   /* filter from full DB */
@@ -123,7 +123,7 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
         <div style={{display:"flex",gap:6,padding:"8px 16px",overflowX:"auto",flexShrink:0,
           msOverflowStyle:"none",scrollbarWidth:"none"}}>
           {MEAL_SLOTS.map(s=>(
-            <button key={tab.id} onClick={()=>setTab(tab.id)} style={{
+            <button key={tab.id} onClick={()=>setActiveTab(tab.id)} style={{
                flexShrink:0,padding:"5px 12px",
               border:`1px solid ${meal===s?tokens.ovulation:tokens.border}`,borderRadius:999,
               fontSize:11,fontWeight:500,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",
@@ -136,12 +136,12 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
         {/* tab switcher */}
         <div style={{display:"flex",padding:"0 16px 8px",flexShrink:0,gap:8}}>
           {[{id:"db",label:`🍽️ ${t("calendar.food_list")}`},{id:"custom",label:`✏️ ${t("calendar.custom")}`}].map(tab=>(
-            <button key={tab.id} onClick={()=>setTab(tab.id)} style={{
+            <button key={tab.id} onClick={()=>setActiveTab(tab.id)} style={{
               flex:1,padding:"7px",
               border:`1px solid ${tokens.border}`,
               borderRadius:10,
-              background:tab===tab.id?tokens.cocoa:tokens.cream,
-              color:tab===tab.id?tokens.cream:tokens.stone,           
+              background:activeTab===tab.id?tokens.cocoa:tokens.cream,
+              color:activeTab===tab.id?tokens.cream:tokens.stone,       
               fontSize:12,fontWeight:500,cursor:"pointer",
               fontFamily:"'DM Sans',sans-serif",
             }}>{tab.label}</button>
