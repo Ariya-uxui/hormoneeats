@@ -2,9 +2,6 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { useApp, ScreenWrapper } from "../App.jsx"
 import { FOOD_DB, CUISINES, CATEGORIES, HORMONE_TAGS, searchFoods } from "../data/foodDatabase.js"
  
-const CUISINE_LABELS_EN = { all:"All", thai:"Thai", japanese:"Japanese", korean:"Korean", western:"Western" }
-const CATEGORY_LABELS_EN = { all:"All", rice:"Rice/Noodle", protein:"Protein", soup:"Soup/Curry", salad:"Salad/Veg", snack:"Snack", fruit:"Fruit", coffee:"☕ Coffee", tea:"🍵 Tea", milk:"🥛 Milk/Yogurt", smoothie:"🥤 Smoothie", coldpress:"🌿 Cold Press", drink:"Other Drink" }
- 
 /* ═══════════════════════════════════════════════════
    TRACKER SCREEN — 100+ foods, 4 cuisines
    ┌─ Header ────────────────────────────────────────┐
@@ -180,7 +177,7 @@ function TodayLog({ entries, onDelete, totalCal, targetCal, tokens }) {
  
 /* ── Food Card ── */
 function FoodCard({ food, isAdded, currentPhaseKey, onToggle, tokens }) {
-  const { t, lang } = useApp()
+  const { t } = useApp()
   const tag        = HORMONE_TAGS[food.hormoneTag] ?? HORMONE_TAGS.neutral
   const isPhaseHit = food.phase?.includes(currentPhaseKey)
   const cuisineFlag = { thai:"🇹🇭", japanese:"🇯🇵", korean:"🇰🇷", western:"🌍" }
@@ -219,7 +216,7 @@ function FoodCard({ food, isAdded, currentPhaseKey, onToggle, tokens }) {
           fontSize:9, fontWeight:500, padding:"2px 7px",
           borderRadius:999, background:tag.bg, color:tag.color,
         }}>
-          {lang==="en" ? {"boost":"Hormone Boost","good":"Hormone Friendly","neutral":"Regular","avoid":"Limit"}[food.hormoneTag] ?? tag.label : tag.label}
+          {tag.label}
         </span>
         <span style={{ fontSize:12 }}>{cuisineFlag[food.cuisine] ?? ""}</span>
       </div>
@@ -246,7 +243,7 @@ function FoodCard({ food, isAdded, currentPhaseKey, onToggle, tokens }) {
           background:tag.bg, borderRadius:6, padding:"3px 6px",
           lineHeight:1.4,
         }}>
-          {food.hormoneNote}
+          {lang==="en" ? (food.hormoneNoteEn??food.hormoneNote) : food.hormoneNote}
         </div>
       )}
  
@@ -394,7 +391,7 @@ export default function Tracker() {
           msOverflowStyle:"none", scrollbarWidth:"none",
         }}>
           {CUISINES.map(c => (
-            <FilterChip key={c.id} label={lang==="en" ? (CUISINE_LABELS_EN[c.id]??c.label) : c.label} emoji={c.emoji}
+            <FilterChip key={c.id} label={c.label} emoji={c.emoji}
               active={cuisine === c.id}
               onClick={() => setCuisine(c.id)} tokens={tokens} />
           ))}
@@ -406,7 +403,7 @@ export default function Tracker() {
           msOverflowStyle:"none", scrollbarWidth:"none",
         }}>
           {CATEGORIES.map(c => (
-            <FilterChip key={c.id} label={lang==="en" ? (CATEGORY_LABELS_EN[c.id]??c.label) : c.label}
+            <FilterChip key={c.id} label={c.label}
               active={category === c.id}
               onClick={() => setCategory(c.id)} tokens={tokens} />
           ))}
