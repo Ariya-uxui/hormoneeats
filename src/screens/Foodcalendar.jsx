@@ -138,7 +138,7 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
         {/* tab switcher */}
         <div style={{display:"flex",padding:"0 16px 8px",flexShrink:0,gap:8}}>
           {[{id:"db",label:`🍽️ ${t("calendar.food_list")}`},{id:"custom",label:`✏️ ${t("calendar.custom")}`}].map(tab=>(
-            <button key={tab.id} onClick={()=>setTab(t.id)} style={{
+            <button key={tab.id} onClick={()=>setTab(tab.id)} style={{
               flex:1,padding:"7px",
               border:`1px solid ${tokens.border}`,
               borderRadius:10,
