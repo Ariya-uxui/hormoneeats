@@ -123,7 +123,9 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
         <div style={{display:"flex",gap:6,padding:"8px 16px",overflowX:"auto",flexShrink:0,
           msOverflowStyle:"none",scrollbarWidth:"none"}}>
           {MEAL_SLOTS.map(s=>(
-            <button key={s} onClick={()=>setMeal(s)} style={{
+            <button key={tab.id} onClick={()=>setTab(tab.id)} style={{
+  background:tab===tab.id?tokens.cocoa:tokens.cream,
+  color:tab===tab.id?tokens.cream:tokens.stone,
               flexShrink:0,padding:"5px 12px",
               border:`1px solid ${meal===s?tokens.ovulation:tokens.border}`,borderRadius:999,
               fontSize:11,fontWeight:500,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",
@@ -144,7 +146,7 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
               color:tab===t.id?tokens.cream:tokens.stone,
               fontSize:12,fontWeight:500,cursor:"pointer",
               fontFamily:"'DM Sans',sans-serif",
-            }}>{t.label}</button>
+            }}>{tab.label}</button>
           ))}
         </div>
  
@@ -180,7 +182,7 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
                     fontFamily:"'DM Sans',sans-serif",
                     background:cuisine===cu.id?tokens.cocoa:tokens.cream,
                     color:cuisine===cu.id?tokens.cream:tokens.stone,
-                  }}>{cu.emoji} {cu.label}</button>
+                  }}>{cu.emoji} {lang==="en" ? (cu.labelEn??cu.label) : cu.label}</button>
                 ))}
               </div>
  
