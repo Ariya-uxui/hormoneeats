@@ -1,12 +1,12 @@
 import { useState } from "react"
 import { useApp, ScreenWrapper } from "../App.jsx"
 import { FOOD_DB, CUISINES, searchFoods } from "../data/foodDatabase.js"
-
+ 
 /* ═══════════════════════════════════════════════════
    FOOD CALENDAR — reads/writes diary from AppContext
    (diary is persisted via localStorage in App.jsx)
 ═══════════════════════════════════════════════════ */
-
+ 
 const THAI_MONTHS_FULL = [
   "มกราคม","กุมภาพันธ์","มีนาคม","เมษายน",
   "พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม",
@@ -19,9 +19,9 @@ const THAI_MONTHS_SHORT = [
 const DAY_LABELS = ["อา","จ","อ","พ","พฤ","ศ","ส"]
 const MEAL_SLOTS_TH = ["เช้า","กลางวัน","บ่าย","เย็น","ก่อนนอน"]
 const MEAL_SLOTS_EN = ["Morning","Lunch","Afternoon","Dinner","Bedtime"]
-
+ 
 /* ใช้ FOOD_DB จาก foodDatabase.js — เหมือนหน้าแคลอรี่ */
-
+ 
 /* ── helpers ── */
 function toDateKey(year, month, day) {
   return `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`
@@ -36,7 +36,7 @@ function formatDateThai(dateKey) {
 }
 function getDaysInMonth(year, month) { return new Date(year, month+1, 0).getDate() }
 function getFirstDayOfWeek(year, month) { return new Date(year, month, 1).getDay() }
-
+ 
 function calBarColor(cal, target) {
   if (!cal) return "transparent"
   const p = cal / target
@@ -45,26 +45,26 @@ function calBarColor(cal, target) {
   if (p <= 1.1)  return "#C4A882"
   return "#D4B8C0"
 }
-
+ 
 /* ═══════════════════════════════════════════════════
    ADD FOOD MODAL — ใช้ FOOD_DB 147 รายการ เหมือนหน้าแคลอรี่
 ═══════════════════════════════════════════════════ */
 function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
-  const { lang, t: tl } = useApp()
+  const { lang, t } = useApp()
   const MEAL_SLOTS = lang==="en" ? MEAL_SLOTS_EN : MEAL_SLOTS_TH
   const [meal,    setMeal   ] = useState(MEAL_SLOTS_TH[0])
   const [search,  setSearch ] = useState("")
   const [cuisine, setCuisine] = useState("all")
   const [tab,     setTab    ] = useState("db")
   const [custom,  setCustom ] = useState({ name:"", cal:"", emoji:"🍽️" })
-
+ 
   /* filter from full DB */
   const filtered = FOOD_DB.filter(f => {
     const matchQ  = !search  || f.name.includes(search) || (f.nameEn||"").toLowerCase().includes(search.toLowerCase())
     const matchCu = cuisine === "all" || f.cuisine === cuisine
     return matchQ && matchCu
   })
-
+ 
   function buildEntry(food) {
     const now = new Date()
     return {
@@ -80,18 +80,18 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
       time:    `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`,
     }
   }
-
+ 
   function handleAdd(food) { onAdd(buildEntry(food)) }
-
+ 
   function handleCustomAdd() {
     const cal = parseInt(custom.cal)
     if (!custom.name.trim() || isNaN(cal) || cal <= 0) return
     onAdd(buildEntry({ emoji:custom.emoji, name:custom.name.trim(), cal, protein:0, carb:0, fat:0 }))
     setCustom({ name:"", cal:"", emoji:"🍽️" })
   }
-
+ 
   const cuisineFlag = { thai:"🇹🇭", japanese:"🇯🇵", korean:"🇰🇷", western:"🌍" }
-
+ 
   return (
     <div onClick={onClose} style={{
       position:"absolute",inset:0,zIndex:400,
@@ -117,7 +117,7 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
           <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",
             fontSize:18,color:tokens.stone,padding:"4px 8px"}}>✕</button>
         </div>
-
+ 
         {/* meal picker */}
         <div style={{display:"flex",gap:6,padding:"8px 16px",overflowX:"auto",flexShrink:0,
           msOverflowStyle:"none",scrollbarWidth:"none"}}>
@@ -131,22 +131,22 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
             }}>{s}</button>
           ))}
         </div>
-
+ 
         {/* tab switcher */}
         <div style={{display:"flex",padding:"0 16px 8px",flexShrink:0,gap:8}}>
-          {[{id:"db",label:`🍽️ ${t("calendar.food_list")}`},{id:"custom",label:`✏️ ${t("calendar.custom")}`}].map(t=>(
-            <button key={t.id} onClick={()=>setTab(t.id)} style={{
+          {[{id:"db",label:`🍽️ ${t("calendar.food_list")}`},{id:"custom",label:`✏️ ${t("calendar.custom")}`}].map(tab=>(
+            <button key={tab.id} onClick={()=>setTab(tab.id)} style={{
               flex:1,padding:"7px",
               border:`1px solid ${tokens.border}`,
               borderRadius:10,
-              background:tab===t.id?tokens.cocoa:tokens.cream,
-              color:tab===t.id?tokens.cream:tokens.stone,
+              background:tab===tab.id?tokens.cocoa:tokens.cream,
+              color:tab===tab.id?tokens.cream:tokens.stone,
               fontSize:12,fontWeight:500,cursor:"pointer",
               fontFamily:"'DM Sans',sans-serif",
-            }}>{t.label}</button>
+            }}>{tab.label}</button>
           ))}
         </div>
-
+ 
         {/* content */}
         <div style={{flex:1,overflow:"auto",padding:"0 16px 80px"}}>
           {tab==="db" ? (
@@ -167,7 +167,7 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
                   position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",
                   fontSize:12,cursor:"pointer",color:tokens.stone}}>✕</span>}
               </div>
-
+ 
               {/* cuisine filter */}
               <div style={{display:"flex",gap:5,marginBottom:10,overflowX:"auto",
                 msOverflowStyle:"none",scrollbarWidth:"none"}}>
@@ -182,12 +182,12 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
                   }}>{cu.emoji} {cu.label}</button>
                 ))}
               </div>
-
+ 
               {/* result count */}
               <div style={{fontSize:10,color:tokens.stone,marginBottom:6}}>
                 {filtered.length} รายการ
               </div>
-
+ 
               {/* food list */}
               <div style={{display:"flex",flexDirection:"column",gap:5}}>
                 {filtered.map(f=>(
@@ -245,7 +245,7 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
             </div>
           )}
         </div>
-
+ 
         {tab==="custom" && (
           <div style={{
             padding:"10px 16px 16px",
@@ -267,12 +267,12 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
             </button>
           </div>
         )}
-
+ 
       </div>
     </div>
   )
 }
-
+ 
 /* ═══════════════════════════════════════════════════
    CALENDAR GRID
 ═══════════════════════════════════════════════════ */
@@ -282,7 +282,7 @@ function CalendarGrid({ year, month, selectedKey, diary, targetCal, tokens, onSe
   const today          = todayKey()
   const cells = Array(firstDayOfWeek).fill(null)
     .concat(Array.from({length:daysInMonth},(_,i)=>i+1))
-
+ 
   return (
     <div style={{padding:"0 16px"}}>
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",marginBottom:4}}>
@@ -353,18 +353,19 @@ function CalendarGrid({ year, month, selectedKey, diary, targetCal, tokens, onSe
     </div>
   )
 }
-
+ 
 /* ═══════════════════════════════════════════════════
    DAY SUMMARY
 ═══════════════════════════════════════════════════ */
 function DaySummary({ dateKey, entries, targetCal, tokens }) {
+  const { t, lang } = useApp()
   const totalCal = entries.reduce((s,f)=>s+f.cal,0)
   const totalP   = entries.reduce((s,f)=>s+(f.protein??0),0)
   const totalC   = entries.reduce((s,f)=>s+(f.carb??0),0)
   const totalF   = entries.reduce((s,f)=>s+(f.fat??0),0)
   const pct      = Math.min(100,Math.round(totalCal/targetCal*100))
   const remaining= targetCal-totalCal
-
+ 
   return(
     <div className="fade-up" style={{margin:"10px 16px 0",background:tokens.creamSoft,
       border:`1px solid ${tokens.borderLt}`,borderRadius:20,padding:"14px 16px"}}>
@@ -415,11 +416,12 @@ function DaySummary({ dateKey, entries, targetCal, tokens }) {
     </div>
   )
 }
-
+ 
 /* ═══════════════════════════════════════════════════
    FOOD ENTRY LIST
 ═══════════════════════════════════════════════════ */
 function FoodEntryList({ dateKey, entries, onDelete, tokens }) {
+  const { t } = useApp()
   if(entries.length===0){
     return(
       <div style={{padding:"24px 16px",textAlign:"center",color:tokens.stone,fontSize:13}}>
@@ -481,7 +483,7 @@ function FoodEntryList({ dateKey, entries, onDelete, tokens }) {
     </div>
   )
 }
-
+ 
 /* ═══════════════════════════════════════════════════
    MONTHLY SUMMARY
 ═══════════════════════════════════════════════════ */
@@ -512,22 +514,22 @@ function MonthlySummary({ year, month, diary, targetCal, tokens }) {
     </div>
   )
 }
-
+ 
 /* ═══════════════════════════════════════════════════
    FOOD CALENDAR — main export
 ═══════════════════════════════════════════════════ */
 export default function Foodcalendar() {
   /* ── Pull diary + helpers from context (localStorage-backed) ── */
   const { user, diary, addDiaryEntry, deleteDiaryEntry, tokens, t, lang } = useApp()
-
+ 
   const today = new Date()
   const [viewYear,    setViewYear   ] = useState(today.getFullYear())
   const [viewMonth,   setViewMonth  ] = useState(today.getMonth())
   const [selectedKey, setSelectedKey] = useState(todayKey())
   const [showModal,   setShowModal  ] = useState(false)
-
+ 
   const selectedEntries = diary[selectedKey] ?? []
-
+ 
   function prevMonth() {
     if(viewMonth===0){setViewMonth(11);setViewYear(y=>y-1)}
     else setViewMonth(m=>m-1)
@@ -538,12 +540,12 @@ export default function Foodcalendar() {
     if(viewMonth===11){setViewMonth(0);setViewYear(y=>y+1)}
     else setViewMonth(m=>m+1)
   }
-
+ 
   function handleAdd(entry) {
     addDiaryEntry(entry)   /* ← writes to context → localStorage */
     setShowModal(false)
   }
-
+ 
   return(
     <ScreenWrapper>
       {/* Header */}
@@ -554,9 +556,9 @@ export default function Foodcalendar() {
         </div>
         <div style={{fontSize:12,color:tokens.stone}}>{lang==="en" ? "Daily food log · calories per day" : "บันทึกอาหารรายวัน · แคลอรี่ต่อวัน"}</div>
       </div>
-
+ 
       <div className="scroll-body" style={{flex:1,paddingBottom:160}}>
-
+ 
         {/* Month navigator */}
         <div className="fade-up" style={{display:"flex",justifyContent:"space-between",
           alignItems:"center",padding:"14px 20px 10px"}}>
@@ -575,7 +577,7 @@ export default function Foodcalendar() {
             color:(viewYear===today.getFullYear()&&viewMonth>=today.getMonth())
               ?tokens.stoneLt:tokens.stone}}>›</button>
         </div>
-
+ 
         {/* Grid */}
         <div className="fade-up">
           <CalendarGrid year={viewYear} month={viewMonth}
@@ -583,13 +585,13 @@ export default function Foodcalendar() {
             targetCal={user.targetCal} tokens={tokens}
             onSelectDay={setSelectedKey}/>
         </div>
-
+ 
         <MonthlySummary year={viewYear} month={viewMonth}
           diary={diary} targetCal={user.targetCal} tokens={tokens}/>
-
+ 
         <DaySummary dateKey={selectedKey} entries={selectedEntries}
           targetCal={user.targetCal} tokens={tokens}/>
-
+ 
         {/* Add button */}
         <div style={{padding:"10px 16px 0"}}>
           <button onClick={()=>setShowModal(true)} style={{
@@ -605,15 +607,15 @@ export default function Foodcalendar() {
             {t("calendar.add_food")} {formatDateThai(selectedKey)}
           </button>
         </div>
-
+ 
         <div style={{marginTop:4}}>
           <FoodEntryList dateKey={selectedKey} entries={selectedEntries}
             onDelete={deleteDiaryEntry} tokens={tokens}/>
         </div>
-
+ 
         <div style={{height:16}}/>
       </div>
-
+ 
       {showModal&&(
         <AddFoodModal dateKey={selectedKey}
           onAdd={handleAdd} onClose={()=>setShowModal(false)} tokens={tokens}/>

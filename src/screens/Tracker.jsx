@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useApp, ScreenWrapper } from "../App.jsx"
 import { FOOD_DB, CUISINES, CATEGORIES, HORMONE_TAGS, searchFoods } from "../data/foodDatabase.js"
-
+ 
 /* ═══════════════════════════════════════════════════
    TRACKER SCREEN — 100+ foods, 4 cuisines
    ┌─ Header ────────────────────────────────────────┐
@@ -13,13 +13,13 @@ import { FOOD_DB, CUISINES, CATEGORIES, HORMONE_TAGS, searchFoods } from "../dat
    ├─ FoodGrid ──────────────────────────────────────┤
    └─────────────────────────────────────────────────┘
 ═══════════════════════════════════════════════════ */
-
+ 
 /* ── Calorie Ring (Canvas) ── */
 function CalorieRing({ current, target, tokens }) {
   const canvasRef = useRef(null)
   const pct       = Math.min(1, current / target)
   const ringColor = pct > 1 ? tokens.rose : pct > .85 ? tokens.gold : tokens.sage
-
+ 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -42,7 +42,7 @@ function CalorieRing({ current, target, tokens }) {
       ctx.lineCap = "round"; ctx.stroke()
     }
   }, [current, target, tokens, ringColor])
-
+ 
   return (
     <div style={{ position:"relative", width:92, height:92, flexShrink:0 }}>
       <canvas ref={canvasRef} />
@@ -57,9 +57,10 @@ function CalorieRing({ current, target, tokens }) {
     </div>
   )
 }
-
+ 
 /* ── Macro Bars ── */
 function MacroBars({ protein, carb, fat, tokens }) {
+  const { t } = useApp()
   const bars = [
     { label:t("tracker.protein"), val:protein, target:95,  color:tokens.sage  },
     { label:t("tracker.carb"),    val:carb,    target:160, color:tokens.gold  },
@@ -88,15 +89,16 @@ function MacroBars({ protein, carb, fat, tokens }) {
     </div>
   )
 }
-
+ 
 /* ── Today's Food Log (from diary) ── */
 function TodayLog({ entries, onDelete, totalCal, targetCal, tokens }) {
+  const { t } = useApp()
   if (entries.length === 0) return null
-
+ 
   const remaining = targetCal - totalCal
   const pct = Math.min(100, Math.round(totalCal / targetCal * 100))
   const barColor = pct > 100 ? tokens.rose : pct > 85 ? tokens.gold : tokens.sage
-
+ 
   /* group by meal */
   const byMeal = {}
   entries.forEach(e => {
@@ -104,7 +106,7 @@ function TodayLog({ entries, onDelete, totalCal, targetCal, tokens }) {
     if (!byMeal[k]) byMeal[k] = []
     byMeal[k].push(e)
   })
-
+ 
   return (
     <div className="fade-up" style={{
       margin:"10px 16px 0",
@@ -125,14 +127,14 @@ function TodayLog({ entries, onDelete, totalCal, targetCal, tokens }) {
             : `เกิน ${Math.abs(remaining).toLocaleString()} kcal`}
         </span>
       </div>
-
+ 
       {/* progress bar */}
       <div style={{ height:4, background:tokens.border, borderRadius:2,
         overflow:"hidden", marginBottom:10 }}>
         <div style={{ height:"100%", width:`${pct}%`,
           background:barColor, borderRadius:2, transition:"width .4s ease" }}/>
       </div>
-
+ 
       {/* entries grouped by meal */}
       {Object.entries(byMeal).map(([meal, items]) => (
         <div key={meal} style={{ marginBottom:8 }}>
@@ -172,13 +174,14 @@ function TodayLog({ entries, onDelete, totalCal, targetCal, tokens }) {
     </div>
   )
 }
-
+ 
 /* ── Food Card ── */
 function FoodCard({ food, isAdded, currentPhaseKey, onToggle, tokens }) {
+  const { t } = useApp()
   const tag        = HORMONE_TAGS[food.hormoneTag] ?? HORMONE_TAGS.neutral
   const isPhaseHit = food.phase?.includes(currentPhaseKey)
   const cuisineFlag = { thai:"🇹🇭", japanese:"🇯🇵", korean:"🇰🇷", western:"🌍" }
-
+ 
   return (
     <div onClick={() => onToggle(food)}
       style={{
@@ -205,7 +208,7 @@ function FoodCard({ food, isAdded, currentPhaseKey, onToggle, tokens }) {
           background:tokens.lavender,
         }} />
       )}
-
+ 
       {/* Top row: hormone tag + cuisine flag */}
       <div style={{ display:"flex", justifyContent:"space-between",
         alignItems:"center", marginBottom:5 }}>
@@ -217,7 +220,7 @@ function FoodCard({ food, isAdded, currentPhaseKey, onToggle, tokens }) {
         </span>
         <span style={{ fontSize:12 }}>{cuisineFlag[food.cuisine] ?? ""}</span>
       </div>
-
+ 
       <div style={{ fontSize:22, marginBottom:5 }}>{food.emoji}</div>
       <div style={{ fontSize:12, fontWeight:500, color:tokens.cocoa,
         marginBottom:2, lineHeight:1.3 }}>
@@ -232,7 +235,7 @@ function FoodCard({ food, isAdded, currentPhaseKey, onToggle, tokens }) {
       <div style={{ fontSize:10, color:tokens.stone, marginTop:2 }}>
         P {food.protein}g · C {food.carb}g · F {food.fat}g
       </div>
-
+ 
       {/* Hormone note */}
       {food.hormoneNote && (
         <div style={{
@@ -243,7 +246,7 @@ function FoodCard({ food, isAdded, currentPhaseKey, onToggle, tokens }) {
           {food.hormoneNote}
         </div>
       )}
-
+ 
       {/* Add button */}
       <button style={{
         marginTop:8, width:"100%", padding:"6px",
@@ -260,7 +263,7 @@ function FoodCard({ food, isAdded, currentPhaseKey, onToggle, tokens }) {
     </div>
   )
 }
-
+ 
 /* ── Filter Chip ── */
 function FilterChip({ label, emoji, active, onClick, tokens }) {
   return (
@@ -279,7 +282,7 @@ function FilterChip({ label, emoji, active, onClick, tokens }) {
     </div>
   )
 }
-
+ 
 /* ═══════════════════════════════════════════════════
    TRACKER — main export
 ═══════════════════════════════════════════════════ */
@@ -288,25 +291,25 @@ export default function Tracker() {
     user, cartItems, toggleCartItem,
     todayEntries, totalCal, totalProtein, totalCarb, totalFat,
     deleteDiaryEntry,
-    tokens, currentPhase,
+    tokens, currentPhase, t, lang,
   } = useApp()
-
+ 
   const [search,   setSearch  ] = useState("")
   const [cuisine,  setCuisine ] = useState("all")
   const [category, setCategory] = useState("all")
   const [showPhaseOnly, setShowPhaseOnly] = useState(false)
-
+ 
   const handleSearch = useCallback(v => setSearch(v), [])
-
+ 
   /* Filter foods */
   const filtered = searchFoods(search, cuisine, category).filter(f => {
     if (!showPhaseOnly) return true
     return f.phase?.includes(user.currentPhase) || f.hormoneTag === "boost"
   })
-
+ 
   const cartNames = new Set(cartItems.map(f => f.name))
   const remaining = Math.max(0, user.targetCal - totalCal)
-
+ 
   return (
     <ScreenWrapper>
       {/* Header */}
@@ -329,9 +332,9 @@ export default function Tracker() {
           </span>
         </div>
       </div>
-
+ 
       <div className="scroll-body" style={{ flex:1, paddingBottom:90 }}>
-
+ 
         {/* Ring + Macros */}
         <div className="fade-up" style={{
           margin:"14px 16px 0",
@@ -343,7 +346,7 @@ export default function Tracker() {
           <CalorieRing current={totalCal} target={user.targetCal ?? 1440} tokens={tokens} />
           <MacroBars protein={totalProtein} carb={totalCarb} fat={totalFat} tokens={tokens} />
         </div>
-
+ 
         {/* Today's log — synced with Calendar */}
         <TodayLog
           entries={todayEntries ?? []}
@@ -352,7 +355,7 @@ export default function Tracker() {
           targetCal={user.targetCal ?? 1440}
           tokens={tokens}
         />
-
+ 
         {/* Search */}
         <div className="fade-up" style={{ padding:"10px 16px 0" }}>
           <div style={{ position:"relative" }}>
@@ -381,7 +384,7 @@ export default function Tracker() {
             )}
           </div>
         </div>
-
+ 
         {/* Cuisine filter */}
         <div className="fade-up" style={{
           display:"flex", gap:7, padding:"8px 16px 0", overflowX:"auto",
@@ -393,7 +396,7 @@ export default function Tracker() {
               onClick={() => setCuisine(c.id)} tokens={tokens} />
           ))}
         </div>
-
+ 
         {/* Category filter */}
         <div className="fade-up" style={{
           display:"flex", gap:6, padding:"6px 16px 0", overflowX:"auto",
@@ -405,7 +408,7 @@ export default function Tracker() {
               onClick={() => setCategory(c.id)} tokens={tokens} />
           ))}
         </div>
-
+ 
         {/* Phase filter toggle */}
         <div style={{ padding:"8px 16px 0", display:"flex", gap:8, alignItems:"center" }}>
           <div onClick={() => setShowPhaseOnly(v => !v)} style={{
@@ -435,7 +438,7 @@ export default function Tracker() {
             {filtered.length} รายการ
           </span>
         </div>
-
+ 
         {/* Food Grid */}
         {filtered.length === 0 ? (
           <div style={{ padding:"40px 16px", textAlign:"center",
@@ -460,7 +463,7 @@ export default function Tracker() {
             ))}
           </div>
         )}
-
+ 
         <div style={{ height:16 }} />
       </div>
     </ScreenWrapper>
