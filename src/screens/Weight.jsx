@@ -94,7 +94,7 @@ function WeightHero({ weight, goalWeight }) {
    SVG LINE CHART
 ═══════════════════════════════════════════════════ */
 function WeightChart({ history, goalWeight }) {
-  const { tokens, lang } = useApp()
+  const { tokens } = useApp()
  
   /* Build chart points from last 6 entries */
   const points = useMemo(() => {
@@ -213,7 +213,7 @@ function ChartBlock({ history, goalWeight }) {
    WEEKLY PROGRESS PILL
 ═══════════════════════════════════════════════════ */
 function WeeklyProgress({ history }) {
-  const { tokens, lang } = useApp()
+  const { tokens, lang, t } = useApp()
  
   /* Compare latest vs 7 entries ago */
   const latest = history[0]?.value
