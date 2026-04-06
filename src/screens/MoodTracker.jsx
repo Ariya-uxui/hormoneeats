@@ -1,12 +1,12 @@
 import { useState } from "react"
 import { useApp, ScreenWrapper } from "../App.jsx"
-
+ 
 /* ═══════════════════════════════════════════════════
    MOOD & ENERGY TRACKER
    บันทึกอารมณ์ + พลังงานรายวัน
    เชื่อมโยงกับเฟสฮอร์โมน
 ═══════════════════════════════════════════════════ */
-
+ 
 const MOODS = [
   { id:"great",   emoji:"🤩", label:"ยอดเยี่ยม",  color:"#A8C4A0", score:5 },
   { id:"good",    emoji:"😊", label:"ดี",          color:"#BBA8C4", score:4 },
@@ -14,13 +14,13 @@ const MOODS = [
   { id:"tired",   emoji:"😔", label:"อ่อนเพลีย",  color:"#9EB0C4", score:2 },
   { id:"bad",     emoji:"😞", label:"แย่",         color:"#D4B8C0", score:1 },
 ]
-
+ 
 const ENERGY_LEVELS = [
   { id:"high",   emoji:"⚡", label:"พลังงานสูง",  color:"#A8C4A0" },
   { id:"medium", emoji:"🔋", label:"ปานกลาง",     color:"#C4A882" },
   { id:"low",    emoji:"🪫", label:"พลังงานต่ำ",  color:"#9EB0C4" },
 ]
-
+ 
 const SYMPTOMS = [
   { id:"bloating",   emoji:"🫀", label:"ท้องอืด"      },
   { id:"cramps",     emoji:"😣", label:"ปวดท้อง"      },
@@ -33,7 +33,7 @@ const SYMPTOMS = [
   { id:"happy",      emoji:"✨", label:"มีความสุข"    },
   { id:"irritable",  emoji:"😤", label:"หงุดหงิด"     },
 ]
-
+ 
 /* ── helpers ── */
 function todayKey() {
   const d = new Date()
@@ -45,7 +45,7 @@ function formatDateThai(dateKey) {
                "ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."]
   return `${d} ${mo[m-1]}`
 }
-
+ 
 /* ── Mood insight per phase ── */
 const PHASE_MOOD_TIPS = {
   follicular: { tip:"เฟสนี้ Estrogen สูงขึ้น พลังงานและอารมณ์มักดีขึ้นตามธรรมชาติ 🌱", color:"#A8C4A0" },
@@ -53,22 +53,23 @@ const PHASE_MOOD_TIPS = {
   luteal:     { tip:"Progesterone สูง อาจรู้สึกหงุดหงิดหรืออยากของหวาน เป็นเรื่องปกติ 🍂", color:"#C4A882" },
   menstrual:  { tip:"ร่างกายกำลังพักฟื้น พักผ่อนให้เพียงพอและกินอาหารบำรุงธาตุเหล็ก 🌙", color:"#9EB0C4" },
 }
-
+ 
 /* ═══════════════════════════════════════════════════
    LOG ENTRY FORM
 ═══════════════════════════════════════════════════ */
 function LogForm({ onSave, tokens, currentPhase }) {
+  const { t } = useApp()
   const [mood,     setMood    ] = useState(null)
   const [energy,   setEnergy  ] = useState(null)
   const [symptoms, setSymptoms] = useState([])
   const [note,     setNote    ] = useState("")
-
+ 
   function toggleSymptom(id) {
     setSymptoms(prev =>
       prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
     )
   }
-
+ 
   function handleSave() {
     if (!mood || !energy) return
     onSave({ mood, energy, symptoms, note, dateKey: todayKey(),
@@ -77,9 +78,9 @@ function LogForm({ onSave, tokens, currentPhase }) {
     })
     setMood(null); setEnergy(null); setSymptoms([]); setNote("")
   }
-
+ 
   const phaseTip = PHASE_MOOD_TIPS[currentPhase.key]
-
+ 
   return (
     <div className="fade-up" style={{
       margin:"12px 16px 0",
@@ -97,7 +98,7 @@ function LogForm({ onSave, tokens, currentPhase }) {
       }}>
         {phaseTip.tip}
       </div>
-
+ 
       {/* Mood picker */}
       <div style={{ marginBottom:14 }}>
         <div style={{ fontSize:11, fontWeight:500, color:tokens.stone,
@@ -124,7 +125,7 @@ function LogForm({ onSave, tokens, currentPhase }) {
           ))}
         </div>
       </div>
-
+ 
       {/* Energy picker */}
       <div style={{ marginBottom:14 }}>
         <div style={{ fontSize:11, fontWeight:500, color:tokens.stone,
@@ -149,7 +150,7 @@ function LogForm({ onSave, tokens, currentPhase }) {
           ))}
         </div>
       </div>
-
+ 
       {/* Symptoms */}
       <div style={{ marginBottom:14 }}>
         <div style={{ fontSize:11, fontWeight:500, color:tokens.stone,
@@ -177,7 +178,7 @@ function LogForm({ onSave, tokens, currentPhase }) {
           })}
         </div>
       </div>
-
+ 
       {/* Note */}
       <div style={{ marginBottom:14 }}>
         <div style={{ fontSize:11, fontWeight:500, color:tokens.stone,
@@ -200,7 +201,7 @@ function LogForm({ onSave, tokens, currentPhase }) {
           onBlur={e  => e.target.style.borderColor = tokens.border}
         />
       </div>
-
+ 
       {/* Save button */}
       <button
         onClick={handleSave}
@@ -221,14 +222,14 @@ function LogForm({ onSave, tokens, currentPhase }) {
     </div>
   )
 }
-
+ 
 /* ═══════════════════════════════════════════════════
    HISTORY CARD
 ═══════════════════════════════════════════════════ */
 function HistoryCard({ entry, tokens }) {
   const mood   = MOODS.find(m => m.id === entry.mood)
   const energy = ENERGY_LEVELS.find(e => e.id === entry.energy)
-
+ 
   return (
     <div style={{
       background:tokens.creamSoft,
@@ -258,7 +259,7 @@ function HistoryCard({ entry, tokens }) {
           {energy?.emoji} {energy?.label}
         </div>
       </div>
-
+ 
       {entry.symptoms?.length > 0 && (
         <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginBottom:6 }}>
           {entry.symptoms.map(sid => {
@@ -275,7 +276,7 @@ function HistoryCard({ entry, tokens }) {
           })}
         </div>
       )}
-
+ 
       {entry.note && (
         <div style={{ fontSize:12, color:tokens.stone,
           fontStyle:"italic", lineHeight:1.5 }}>
@@ -285,16 +286,17 @@ function HistoryCard({ entry, tokens }) {
     </div>
   )
 }
-
+ 
 /* ═══════════════════════════════════════════════════
    MOOD CHART (last 7 days)
 ═══════════════════════════════════════════════════ */
 function MoodChart({ logs, tokens }) {
+  const { t } = useApp()
   if (logs.length === 0) return null
-
+ 
   const last7 = [...logs].slice(0, 7).reverse()
   const maxScore = 5
-
+ 
   return (
     <div className="fade-up" style={{
       margin:"12px 16px 0",
@@ -331,7 +333,7 @@ function MoodChart({ logs, tokens }) {
     </div>
   )
 }
-
+ 
 /* ═══════════════════════════════════════════════════
    MOOD TRACKER — main export
 ═══════════════════════════════════════════════════ */
@@ -343,15 +345,15 @@ export default function MoodTracker() {
     } catch { return [] }
   })
   const [tab, setTab] = useState("log") // "log" | "history"
-
+ 
   function handleSave(entry) {
     const updated = [entry, ...logs]
     setLogs(updated)
     try { localStorage.setItem("he_moodlogs", JSON.stringify(updated)) } catch {}
   }
-
+ 
   const todayLog = logs.find(l => l.dateKey === todayKey())
-
+ 
   return (
     <ScreenWrapper>
       {/* Header */}
@@ -369,7 +371,7 @@ export default function MoodTracker() {
           {currentPhase.emoji} {currentPhase.label} · วันที่ {user.cycleDay}
         </div>
       </div>
-
+ 
       {/* Tab switcher */}
       <div style={{ display:"flex", padding:"10px 16px 0",
         gap:8, flexShrink:0 }}>
@@ -388,9 +390,9 @@ export default function MoodTracker() {
           }}>{t.label}</button>
         ))}
       </div>
-
+ 
       <div className="scroll-body" style={{ flex:1, paddingBottom:90 }}>
-
+ 
         {tab === "log" ? (
           <>
             {/* Today summary if already logged */}
