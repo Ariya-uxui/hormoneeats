@@ -124,9 +124,7 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
           msOverflowStyle:"none",scrollbarWidth:"none"}}>
           {MEAL_SLOTS.map(s=>(
             <button key={tab.id} onClick={()=>setTab(tab.id)} style={{
-  background:tab===tab.id?tokens.cocoa:tokens.cream,
-  color:tab===tab.id?tokens.cream:tokens.stone,
-              flexShrink:0,padding:"5px 12px",
+               flexShrink:0,padding:"5px 12px",
               border:`1px solid ${meal===s?tokens.ovulation:tokens.border}`,borderRadius:999,
               fontSize:11,fontWeight:500,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",
               background:meal===s?tokens.ovulationLt:tokens.cream,
@@ -143,7 +141,7 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
               border:`1px solid ${tokens.border}`,
               borderRadius:10,
               background:tab===tab.id?tokens.cocoa:tokens.cream,
-              color:tab===t.id?tokens.cream:tokens.stone,
+              color:tab===tab.id?tokens.cream:tokens.stone,           
               fontSize:12,fontWeight:500,cursor:"pointer",
               fontFamily:"'DM Sans',sans-serif",
             }}>{tab.label}</button>
