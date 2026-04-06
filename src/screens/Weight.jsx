@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react"
 import { useApp, ScreenWrapper } from "../App"
- 
+
 /* ═══════════════════════════════════════════════════
    WEIGHT SCREEN
    Layout (from wireframe):
@@ -14,7 +14,7 @@ import { useApp, ScreenWrapper } from "../App"
    │  input + button · history list                   │
    └─────────────────────────────────────────────────┘
 ═══════════════════════════════════════════════════ */
- 
+
 /* ═══════════════════════════════════════════════════
    HERO BLOCK — big weight display
 ═══════════════════════════════════════════════════ */
@@ -23,13 +23,13 @@ function WeightHero({ weight, goalWeight }) {
   const remaining = Math.max(0, weight - goalWeight)
   const weeksLeft  = remaining > 0 ? Math.ceil(remaining / 0.3) : 0
   const lostTotal  = parseFloat((55.2 - weight).toFixed(1))
- 
+
   const cols = [
     { val: goalWeight.toFixed(1), lbl: t("weight.goal") },
     { val: remaining.toFixed(1),  lbl: lang==="en" ? "Remaining (kg)" : "เหลืออีก (กก.)" },
     { val: weeksLeft || "—",      lbl: lang==="en" ? "Est. weeks" : "สัปดาห์โดยประมาณ" },
   ]
- 
+
   return (
     <div style={{
       margin: "14px 16px 0",
@@ -43,7 +43,7 @@ function WeightHero({ weight, goalWeight }) {
       {/* Decorative circles */}
       <div style={{ position:"absolute", top:-55, right:-55, width:170, height:170, borderRadius:"50%", background:"rgba(255,255,255,.08)", pointerEvents:"none" }} />
       <div style={{ position:"absolute", bottom:-35, left:-20, width:110, height:110, borderRadius:"50%", background:"rgba(255,255,255,.05)", pointerEvents:"none" }} />
- 
+
       <div style={{ fontSize:10, letterSpacing:".1em", textTransform:"uppercase", opacity:.7, marginBottom:4, position:"relative" }}>
         {t("weight.current")}
       </div>
@@ -55,7 +55,7 @@ function WeightHero({ weight, goalWeight }) {
         {weight.toFixed(1)}
       </div>
       <div style={{ fontSize:14, opacity:.75 }}>กิโลกรัม</div>
- 
+
       {/* Lost badge */}
       {lostTotal > 0 && (
         <div style={{
@@ -66,10 +66,10 @@ function WeightHero({ weight, goalWeight }) {
           padding:"4px 12px",
           fontSize:11, fontWeight:500,
         }}>
-          lang==="en" ? `↓ Lost ${lostTotal.toFixed(1)} kg` : `↓ ลดไปแล้ว ${lostTotal.toFixed(1)} กก.`
+          {lang==="en" ? `↓ Lost ${lostTotal.toFixed(1)} kg` : `↓ ลดไปแล้ว ${lostTotal.toFixed(1)} กก.`}
         </div>
       )}
- 
+
       {/* Stats row */}
       <div style={{
         display:"flex", marginTop:16,
@@ -89,18 +89,18 @@ function WeightHero({ weight, goalWeight }) {
     </div>
   )
 }
- 
+
 /* ═══════════════════════════════════════════════════
    SVG LINE CHART
 ═══════════════════════════════════════════════════ */
 function WeightChart({ history, goalWeight }) {
   const { tokens } = useApp()
- 
+
   /* Build chart points from last 6 entries */
   const points = useMemo(() => {
     const entries = [...history].reverse().slice(-6)
     if (entries.length < 2) return null
- 
+
     const values = entries.map(e => e.value)
     const minV = Math.min(...values, goalWeight) - 0.5
     const maxV = Math.max(...values) + 0.5
@@ -108,21 +108,21 @@ function WeightChart({ history, goalWeight }) {
     const pad = { l: 8, r: 8, t: 8, b: 22 }
     const innerW = W - pad.l - pad.r
     const innerH = H - pad.t - pad.b
- 
+
     const toX = i  => pad.l + (i / (entries.length - 1)) * innerW
     const toY = v  => pad.t + innerH - ((v - minV) / (maxV - minV)) * innerH
     const goalY   = toY(goalWeight)
- 
+
     const pts = entries.map((e, i) => ({ x: toX(i), y: toY(e.value), entry: e }))
     const pathD = pts.map((p, i) => (i === 0 ? `M${p.x},${p.y}` : `C${pts[i-1].x+20},${pts[i-1].y} ${p.x-20},${p.y} ${p.x},${p.y}`)).join(" ")
     const areaD = pathD + ` L${pts[pts.length-1].x},${H} L${pts[0].x},${H} Z`
- 
+
     return { pts, pathD, areaD, goalY, W, H }
   }, [history, goalWeight])
- 
+
   if (!points) return null
   const { pts, pathD, areaD, goalY, W, H } = points
- 
+
   return (
     <svg
       viewBox={`0 0 ${W} ${H}`}
@@ -135,13 +135,13 @@ function WeightChart({ history, goalWeight }) {
           <stop offset="100%" stopColor={tokens.sage} stopOpacity="0"/>
         </linearGradient>
       </defs>
- 
+
       {/* Grid lines */}
       {[25, 50, 75].map(y => (
         <line key={y} x1="8" y1={y} x2={W-8} y2={y}
           stroke={tokens.border} strokeWidth=".8"/>
       ))}
- 
+
       {/* Goal line */}
       <line x1="8" y1={goalY} x2={W-8} y2={goalY}
         stroke={tokens.gold} strokeWidth="1.2" strokeDasharray="5 4"/>
@@ -149,14 +149,14 @@ function WeightChart({ history, goalWeight }) {
         fontSize="8" fill={tokens.gold} fontFamily="DM Sans">
         {lang==="en" ? "Goal" : "เป้า"} {goalWeight}
       </text>
- 
+
       {/* Area fill */}
       <path d={areaD} fill="url(#wGrad)"/>
- 
+
       {/* Line */}
       <path d={pathD} fill="none"
         stroke={tokens.sage} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
- 
+
       {/* Dots */}
       {pts.map((p, i) => (
         <g key={i}>
@@ -188,7 +188,7 @@ function WeightChart({ history, goalWeight }) {
     </svg>
   )
 }
- 
+
 /* ═══════════════════════════════════════════════════
    CHART BLOCK
 ═══════════════════════════════════════════════════ */
@@ -208,22 +208,22 @@ function ChartBlock({ history, goalWeight }) {
     </div>
   )
 }
- 
+
 /* ═══════════════════════════════════════════════════
    WEEKLY PROGRESS PILL
 ═══════════════════════════════════════════════════ */
 function WeeklyProgress({ history }) {
   const { tokens, lang, t } = useApp()
- 
+
   /* Compare latest vs 7 entries ago */
   const latest = history[0]?.value
   const week   = history.slice(0, Math.min(history.length, 5))
   const oldest = week[week.length - 1]?.value
   if (!latest || !oldest || latest === oldest) return null
- 
+
   const diff = parseFloat((oldest - latest).toFixed(1))
   const isGood = diff >= 0
- 
+
   return (
     <div style={{
       margin: "10px 16px 0",
@@ -236,7 +236,7 @@ function WeeklyProgress({ history }) {
         display:"flex", justifyContent:"space-between", alignItems:"center",
       }}>
         <span style={{ fontSize:12, color: isGood ? tokens.sageDk : "#8B4050" }}>
-          lang==="en" ? `vs last ${week.length} entries` : `เทียบกับ ${week.length} รายการก่อน`
+          {lang==="en" ? `vs last ${week.length} entries` : `เทียบกับ ${week.length} รายการก่อน`}
         </span>
         <span style={{
           fontSize:14, fontWeight:500,
@@ -263,7 +263,7 @@ function WeeklyProgress({ history }) {
     </div>
   )
 }
- 
+
 /* ═══════════════════════════════════════════════════
    LOG INPUT BLOCK
 ═══════════════════════════════════════════════════ */
@@ -271,7 +271,7 @@ function LogBlock({ history, onLog }) {
   const { tokens, t, lang } = useApp()
   const [inputVal, setInputVal] = useState("")
   const [error, setError]       = useState("")
- 
+
   function handleLog() {
     const v = parseFloat(inputVal)
     if (isNaN(v) || v < 20 || v > 300) {
@@ -282,7 +282,7 @@ function LogBlock({ history, onLog }) {
     setInputVal("")
     onLog(v)
   }
- 
+
   return (
     <div className="fade-up" style={{
       margin: "10px 16px 0",
@@ -293,7 +293,7 @@ function LogBlock({ history, onLog }) {
       <div style={{ fontSize:13, fontWeight:500, color:tokens.cocoa, marginBottom:10 }}>
         {t("weight.log")}
       </div>
- 
+
       {/* Input row */}
       <div style={{ display:"flex", gap:8, marginBottom: error ? 6 : 10 }}>
         <input
@@ -332,12 +332,12 @@ function LogBlock({ history, onLog }) {
           {t("common.save")}
         </button>
       </div>
- 
+
       {/* Error */}
       {error && (
         <div style={{ fontSize:11, color:"#E24B4A", marginBottom:8 }}>{error}</div>
       )}
- 
+
       {/* History */}
       <div style={{ display:"flex", flexDirection:"column" }}>
         {history.slice(0, 6).map((h, i) => (
@@ -369,13 +369,13 @@ function LogBlock({ history, onLog }) {
     </div>
   )
 }
- 
+
 /* ═══════════════════════════════════════════════════
    WEIGHT SCREEN — main export
 ═══════════════════════════════════════════════════ */
 export default function Weight() {
   const { user, weightHistory, logWeight, tokens, t, lang } = useApp()
- 
+
   return (
     <ScreenWrapper>
       {/* Header */}
@@ -396,7 +396,7 @@ export default function Weight() {
           · {lang==="en" ? "Ideal rate 0.3–0.5 kg/week" : "อัตราที่เหมาะ 0.3–0.5 กก./สัปดาห์"}
         </div>
       </div>
- 
+
       <div className="scroll-body" style={{ flex:1, paddingBottom:90 }}>
         <WeightHero weight={user.weight} goalWeight={user.goalWeight} />
         <WeeklyProgress history={weightHistory} />
