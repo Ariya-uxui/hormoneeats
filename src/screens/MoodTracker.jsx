@@ -8,30 +8,30 @@ import { useApp, ScreenWrapper } from "../App.jsx"
 ═══════════════════════════════════════════════════ */
  
 const MOODS = [
-  { id:"great",   emoji:"🤩", label:"ยอดเยี่ยม",  color:"#A8C4A0", score:5 },
-  { id:"good",    emoji:"😊", label:"ดี",          color:"#BBA8C4", score:4 },
-  { id:"neutral", emoji:"😐", label:"ปกติ",        color:"#C4A882", score:3 },
-  { id:"tired",   emoji:"😔", label:"อ่อนเพลีย",  color:"#9EB0C4", score:2 },
-  { id:"bad",     emoji:"😞", label:"แย่",         color:"#D4B8C0", score:1 },
+  { id:"great",   emoji:"🤩", labelTh:"ยอดเยี่ยม", labelEn:"Great",   color:"#A8C4A0", score:5 },
+  { id:"good",    emoji:"😊", labelTh:"ดี",         labelEn:"Good",    color:"#BBA8C4", score:4 },
+  { id:"neutral", emoji:"😐", labelTh:"ปกติ",       labelEn:"Neutral", color:"#C4A882", score:3 },
+  { id:"tired",   emoji:"😔", labelTh:"อ่อนเพลีย", labelEn:"Tired",   color:"#9EB0C4", score:2 },
+  { id:"bad",     emoji:"😞", labelTh:"แย่",        labelEn:"Bad",     color:"#D4B8C0", score:1 },
 ]
  
 const ENERGY_LEVELS = [
-  { id:"high",   emoji:"⚡", label:"พลังงานสูง",  color:"#A8C4A0" },
-  { id:"medium", emoji:"🔋", label:"ปานกลาง",     color:"#C4A882" },
-  { id:"low",    emoji:"🪫", label:"พลังงานต่ำ",  color:"#9EB0C4" },
+  { id:"high",   emoji:"⚡", labelTh:"พลังงานสูง", labelEn:"High",   color:"#A8C4A0" },
+  { id:"medium", emoji:"🔋", labelTh:"ปานกลาง",    labelEn:"Medium", color:"#C4A882" },
+  { id:"low",    emoji:"🪫", labelTh:"พลังงานต่ำ", labelEn:"Low",    color:"#9EB0C4" },
 ]
  
 const SYMPTOMS = [
-  { id:"bloating",   emoji:"🫀", label:"ท้องอืด"      },
-  { id:"cramps",     emoji:"😣", label:"ปวดท้อง"      },
-  { id:"headache",   emoji:"🤕", label:"ปวดหัว"       },
-  { id:"cravings",   emoji:"🍫", label:"อยากของหวาน"  },
-  { id:"anxious",    emoji:"😰", label:"วิตกกังวล"    },
-  { id:"focused",    emoji:"🎯", label:"โฟกัสดี"      },
-  { id:"motivated",  emoji:"💪", label:"มีแรงบันดาล"  },
-  { id:"sleepy",     emoji:"😴", label:"ง่วงนอน"      },
-  { id:"happy",      emoji:"✨", label:"มีความสุข"    },
-  { id:"irritable",  emoji:"😤", label:"หงุดหงิด"     },
+  { id:"bloating",   emoji:"🫀", labelTh:"ท้องอืด", labelEn:"Bloating"      },
+  { id:"cramps",     emoji:"😣", labelTh:"ปวดท้อง", labelEn:"Cramps"      },
+  { id:"headache",   emoji:"🤕", labelTh:"ปวดหัว", labelEn:"Headache"       },
+  { id:"cravings",   emoji:"🍫", labelTh:"อยากของหวาน", labelEn:"Cravings"  },
+  { id:"anxious",    emoji:"😰", labelTh:"วิตกกังวล", labelEn:"Anxious"    },
+  { id:"focused",    emoji:"🎯", labelTh:"โฟกัสดี", labelEn:"Focused"      },
+  { id:"motivated",  emoji:"💪", labelTh:"มีแรงบันดาล", labelEn:"Motivated"  },
+  { id:"sleepy",     emoji:"😴", labelTh:"ง่วงนอน", labelEn:"Sleepy"      },
+  { id:"happy",      emoji:"✨", labelTh:"มีความสุข", labelEn:"Happy"    },
+  { id:"irritable",  emoji:"😤", labelTh:"หงุดหงิด", labelEn:"Irritable"     },
 ]
  
 /* ── helpers ── */
@@ -58,7 +58,7 @@ const PHASE_MOOD_TIPS = {
    LOG ENTRY FORM
 ═══════════════════════════════════════════════════ */
 function LogForm({ onSave, tokens, currentPhase }) {
-  const { t } = useApp()
+  const { t, lang } = useApp()
   const [mood,     setMood    ] = useState(null)
   const [energy,   setEnergy  ] = useState(null)
   const [symptoms, setSymptoms] = useState([])
@@ -96,7 +96,7 @@ function LogForm({ onSave, tokens, currentPhase }) {
         fontSize:12, color:tokens.cocoaMid,
         lineHeight:1.55, marginBottom:14,
       }}>
-        {phaseTip.tip}
+        {lang==="en" ? phaseTip.tipEn : phaseTip.tipTh}
       </div>
  
       {/* Mood picker */}
@@ -119,7 +119,7 @@ function LogForm({ onSave, tokens, currentPhase }) {
               <span style={{ fontSize:22 }}>{m.emoji}</span>
               <span style={{ fontSize:9, color: mood===m.id ? tokens.cocoa : tokens.stone,
                 fontWeight: mood===m.id ? 500 : 400, textAlign:"center" }}>
-                {m.label}
+                {lang==="en" ? m.labelEn : m.labelTh}
               </span>
             </div>
           ))}
@@ -130,7 +130,7 @@ function LogForm({ onSave, tokens, currentPhase }) {
       <div style={{ marginBottom:14 }}>
         <div style={{ fontSize:11, fontWeight:500, color:tokens.stone,
           letterSpacing:".06em", textTransform:"uppercase", marginBottom:8 }}>
-          ระดับพลังงาน
+          {lang==="en" ? "Energy Level" : "ระดับพลังงาน"}
         </div>
         <div style={{ display:"flex", gap:8 }}>
           {ENERGY_LEVELS.map(e => (
@@ -145,7 +145,7 @@ function LogForm({ onSave, tokens, currentPhase }) {
               color: energy===e.id ? tokens.cocoa : tokens.stone,
             }}>
               <span style={{ fontSize:16 }}>{e.emoji}</span>
-              {e.label}
+              {lang==="en" ? e.labelEn : e.labelTh}
             </div>
           ))}
         </div>
@@ -155,7 +155,7 @@ function LogForm({ onSave, tokens, currentPhase }) {
       <div style={{ marginBottom:14 }}>
         <div style={{ fontSize:11, fontWeight:500, color:tokens.stone,
           letterSpacing:".06em", textTransform:"uppercase", marginBottom:8 }}>
-          อาการ / ความรู้สึก (เลือกได้หลายอย่าง)
+          {t("mood.symptoms")}
         </div>
         <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
           {SYMPTOMS.map(s => {
@@ -172,7 +172,7 @@ function LogForm({ onSave, tokens, currentPhase }) {
                 transition:"all .15s",
               }}>
                 <span style={{ fontSize:12 }}>{s.emoji}</span>
-                {s.label}
+                {lang==="en" ? s.labelEn : s.labelTh}
               </div>
             )
           })}
@@ -227,6 +227,7 @@ function LogForm({ onSave, tokens, currentPhase }) {
    HISTORY CARD
 ═══════════════════════════════════════════════════ */
 function HistoryCard({ entry, tokens }) {
+  const { lang } = useApp()
   const mood   = MOODS.find(m => m.id === entry.mood)
   const energy = ENERGY_LEVELS.find(e => e.id === entry.energy)
  
@@ -243,7 +244,7 @@ function HistoryCard({ entry, tokens }) {
           <span style={{ fontSize:24 }}>{mood?.emoji}</span>
           <div>
             <div style={{ fontSize:13, fontWeight:500, color:tokens.cocoa }}>
-              {mood?.label}
+              {lang==="en" ? mood?.labelEn : mood?.labelTh}
             </div>
             <div style={{ fontSize:10, color:tokens.stone }}>
               {formatDateThai(entry.dateKey)} · {entry.time}
@@ -256,7 +257,7 @@ function HistoryCard({ entry, tokens }) {
           background: energy ? energy.color+"20" : tokens.borderLt,
           fontSize:11, color:tokens.cocoaMid,
         }}>
-          {energy?.emoji} {energy?.label}
+          {energy?.emoji} {lang==="en" ? energy?.labelEn : energy?.labelTh}
         </div>
       </div>
  
@@ -270,7 +271,7 @@ function HistoryCard({ entry, tokens }) {
                 background:tokens.lavenderLt, color:tokens.lavenderDk,
                 borderRadius:999,
               }}>
-                {s.emoji} {s.label}
+                {s.emoji} {lang==="en" ? s.labelEn : s.labelTh}
               </span>
             ) : null
           })}
@@ -291,7 +292,7 @@ function HistoryCard({ entry, tokens }) {
    MOOD CHART (last 7 days)
 ═══════════════════════════════════════════════════ */
 function MoodChart({ logs, tokens }) {
-  const { t } = useApp()
+  const { t, lang } = useApp()
   if (logs.length === 0) return null
  
   const last7 = [...logs].slice(0, 7).reverse()
@@ -368,7 +369,7 @@ export default function MoodTracker() {
           {t("mood.title")}
         </div>
         <div style={{ fontSize:12, color:tokens.stone }}>
-          {currentPhase.emoji} {currentPhase.label} · วันที่ {user.cycleDay}
+          {currentPhase.emoji} {currentPhase.label} · {lang==="en" ? "Day" : "วันที่"} {user.cycleDay}
         </div>
       </div>
  

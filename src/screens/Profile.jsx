@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useApp, ScreenWrapper } from "../App.jsx"
 import { clearAppStorage } from "../hooks/useLocalStorage.js"
-
+ 
 function calcTDEE(weight, height, age, gender, activity) {
   const bmr = gender === "หญิง"
     ? 655 + 9.563 * weight + 1.85 * height - 4.676 * age
@@ -26,11 +26,11 @@ function bmiCat(bmi) {
   return             { label:"อ้วน",               color:"#D4B8C0" }
 }
 const ACTIVITY_OPTS = [
-  { val:"1", label:"นั่งทำงาน ไม่ค่อยขยับ"         },
-  { val:"2", label:"ออกกำลังกาย 1–3×/สัปดาห์"      },
-  { val:"3", label:"ออกกำลังกาย 3–5×/สัปดาห์"      },
-  { val:"4", label:"ออกกำลังกายหนัก 6–7×/สัปดาห์" },
-  { val:"5", label:"นักกีฬา / งานหนักมาก"           },
+  { val:"1", labelTh:"นั่งทำงาน ไม่ค่อยขยับ",         labelEn:"Sedentary"            },
+  { val:"2", labelTh:"ออกกำลังกาย 1–3×/สัปดาห์",      labelEn:"Light (1–3×/week)"    },
+  { val:"3", labelTh:"ออกกำลังกาย 3–5×/สัปดาห์",      labelEn:"Moderate (3–5×/week)" },
+  { val:"4", labelTh:"ออกกำลังกายหนัก 6–7×/สัปดาห์",  labelEn:"Active (6–7×/week)"   },
+  { val:"5", labelTh:"นักกีฬา / งานหนักมาก",           labelEn:"Athlete / Hard job"   },
 ]
 const GOAL_OPTS = [
   { val:"lose_fast", label:"ลดเร็ว (−500 kcal/วัน)"          },
@@ -44,7 +44,7 @@ const PHASE_OPTS = [
   { val:"luteal",     label:"🍂 Luteal (วัน 17–28)"    },
   { val:"menstrual",  label:"🌙 Menstrual (วัน 1–5)"   },
 ]
-
+ 
 function InfoRow({ label, value, accent, isLast, tokens }) {
   return (
     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
@@ -106,6 +106,7 @@ function BMIScale({ bmi, tokens }) {
   )
 }
 function GoalProgress({ weight, goalWeight, tokens }) {
+  const { lang } = useApp()
   const start=55.2, diff=start-(+goalWeight), done=start-(+weight)
   const pct=diff>0?Math.min(100,Math.max(0,Math.round(done/diff*100))):100
   return (
@@ -113,7 +114,7 @@ function GoalProgress({ weight, goalWeight, tokens }) {
       borderRadius:20, padding:"14px 16px", marginBottom:10 }}>
       <div style={{ display:"flex", justifyContent:"space-between",
         alignItems:"center", marginBottom:8 }}>
-        <span style={{ fontSize:13, fontWeight:500, color:tokens.cocoa }}>ความคืบหน้า</span>
+        <span style={{ fontSize:13, fontWeight:500, color:tokens.cocoa }}>{lang==="en" ? "Progress" : "ความคืบหน้า"}</span>
         <span style={{ fontSize:13, fontWeight:500, color:tokens.sageDk }}>{pct}%</span>
       </div>
       <div style={{ height:8, background:tokens.border, borderRadius:4,
@@ -122,9 +123,9 @@ function GoalProgress({ weight, goalWeight, tokens }) {
       </div>
       <div style={{ display:"flex", justifyContent:"space-between",
         fontSize:11, color:tokens.stone }}>
-        <span>เริ่ม {start.toFixed(1)} กก.</span>
-        <span style={{ color:tokens.sageDk }}>ลดไปแล้ว {Math.max(0,done).toFixed(1)} กก.</span>
-        <span>เป้า {(+goalWeight).toFixed(1)} กก.</span>
+        <span>{lang==="en" ? "Start" : "เริ่ม"} {start.toFixed(1)} {lang==="en" ? "kg" : "กก."}</span>
+        <span style={{ color:tokens.sageDk }}>{lang==="en" ? `Lost ${Math.max(0,done).toFixed(1)} kg` : `ลดไปแล้ว ${Math.max(0,done).toFixed(1)} กก.`}</span>
+        <span>{lang==="en" ? "Goal" : "เป้า"} {(+goalWeight).toFixed(1)} {lang==="en" ? "kg" : "กก."}</span>
       </div>
     </div>
   )
@@ -155,13 +156,13 @@ function ResetConfirm({ onConfirm, onClose, tokens }) {
     </div>
   )
 }
-
+ 
 export default function Profile() {
   const { user, setUser, currentPhase, tokens, showToast, t, lang } = useApp()
   const [editMode,  setEditMode ] = useState(false)
   const [showReset, setShowReset] = useState(false)
   const [form,      setForm     ] = useState({})
-
+ 
   function startEdit() {
     setForm({
       name:         user.name          ?? "คุณสาว",
@@ -178,13 +179,13 @@ export default function Profile() {
     })
     setEditMode(true)
   }
-
+ 
   const pBMI    = editMode ? calcBMI(+form.weight,+form.height) : (user.bmi ?? calcBMI(user.weight,user.height))
   const pTDEE   = editMode ? calcTDEE(+form.weight,+form.height,+form.age,form.gender,+form.activity) : (user.tdee??1740)
   const pTarget = editMode ? calcTargetCal(pTDEE,form.goal) : (user.targetCal??1440)
-
+ 
   function set(k,v) { setForm(f=>({...f,[k]:v})) }
-
+ 
   function handleSave() {
     setUser({
       ...user,
@@ -198,7 +199,7 @@ export default function Profile() {
     setEditMode(false)
     showToast("บันทึกโปรไฟล์แล้ว ✓")
   }
-
+ 
   const inp = { width:"100%", padding:"11px 13px",
     border:`1px solid ${tokens.border}`, borderRadius:12,
     fontSize:14, fontFamily:"'DM Sans',sans-serif",
@@ -206,16 +207,18 @@ export default function Profile() {
   const lbl = { fontSize:11, fontWeight:500, color:tokens.stone,
     letterSpacing:".04em", textTransform:"uppercase", display:"block", marginBottom:6 }
   const row = { marginBottom:14 }
-
+ 
   const goalOpt = GOAL_OPTS.find(o=>o.val===(user.goal??"lose_slow"))??GOAL_OPTS[1]
   const actOpt  = ACTIVITY_OPTS.find(o=>o.val===String(user.activity??2))??ACTIVITY_OPTS[1]
-
+  const goalLabel = lang==="en" ? goalOpt?.labelEn : goalOpt?.labelTh
+  const actLabel  = lang==="en" ? actOpt?.labelEn  : actOpt?.labelTh
+ 
   return (
     <ScreenWrapper>
       {/* ── TOP HEADER (always fixed) ── */}
       <div style={{ background:tokens.creamSoft, borderBottom:`1px solid ${tokens.borderLt}`,
         flexShrink:0, zIndex:10 }}>
-
+ 
         {/* Avatar row */}
         <div style={{ padding:"16px 16px 12px", display:"flex", alignItems:"center", gap:12 }}>
           <div style={{ width:52, height:52, borderRadius:"50%",
@@ -247,7 +250,7 @@ export default function Profile() {
               </button>
           }
         </div>
-
+ 
         {/* ════ 💾 SAVE BUTTON — visible whenever editMode ════ */}
         {editMode && (
           <div style={{ padding:"0 16px 12px" }}>
@@ -270,7 +273,7 @@ export default function Profile() {
             </button>
           </div>
         )}
-
+ 
         {/* Live preview strip */}
         {editMode && (
           <div style={{ display:"flex", background:tokens.lavenderLt,
@@ -288,7 +291,7 @@ export default function Profile() {
             ))}
           </div>
         )}
-
+ 
         {/* Badges (view mode) */}
         {!editMode && (
           <div style={{ display:"flex", gap:6, padding:"0 16px 14px", flexWrap:"wrap" }}>
@@ -303,10 +306,10 @@ export default function Profile() {
           </div>
         )}
       </div>
-
+ 
       {/* ── SCROLLABLE BODY ── */}
       <div className="scroll-body" style={{ flex:1, padding:"14px 16px", paddingBottom:90 }}>
-
+ 
         {editMode ? (
           /* ──── EDIT FORM ──── */
           <div>
@@ -348,7 +351,7 @@ export default function Profile() {
                   onBlur={e=>e.target.style.borderColor=tokens.border}/>
               </div>
             </div>
-
+ 
             <SecLabel text={lang==="en" ? "Goals" : "เป้าหมาย"} tokens={tokens}/>
             <div style={row}>
               <label style={lbl}>{t("profile.goal_weight")}</label>
@@ -360,16 +363,16 @@ export default function Profile() {
             <div style={row}>
               <label style={lbl}>{t("profile.eating_goal")}</label>
               <select style={{...inp,cursor:"pointer"}} value={form.goal} onChange={e=>set("goal",e.target.value)}>
-                {GOAL_OPTS.map(o=><option key={o.val} value={o.val}>{o.label}</option>)}
+                {GOAL_OPTS.map(o=><option key={o.val} value={o.val}>{lang==="en" ? o.labelEn : o.labelTh}</option>)}
               </select>
             </div>
             <div style={row}>
               <label style={lbl}>{t("profile.activity")}</label>
               <select style={{...inp,cursor:"pointer"}} value={form.activity} onChange={e=>set("activity",e.target.value)}>
-                {ACTIVITY_OPTS.map(o=><option key={o.val} value={o.val}>{o.label}</option>)}
+                {ACTIVITY_OPTS.map(o=><option key={o.val} value={o.val}>{lang==="en" ? o.labelEn : o.labelTh}</option>)}
               </select>
             </div>
-
+ 
             <SecLabel text={lang==="en" ? "Hormone Cycle" : "รอบฮอร์โมน"} tokens={tokens}/>
             <div style={row}>
               <label style={lbl}>{t("profile.phase")}</label>
@@ -393,7 +396,7 @@ export default function Profile() {
                   onBlur={e=>e.target.style.borderColor=tokens.border}/>
               </div>
             </div>
-
+ 
             {/* Save at bottom of form too */}
             <button onClick={handleSave} style={{
               width:"100%", padding:"14px", marginTop:8,
@@ -404,13 +407,13 @@ export default function Profile() {
               {t("profile.save")}
             </button>
           </div>
-
+ 
         ) : (
           /* ──── VIEW MODE ──── */
           <div>
             <GoalProgress weight={user.weight} goalWeight={user.goalWeight} tokens={tokens}/>
             <BMIScale bmi={user.bmi??calcBMI(user.weight,user.height)} tokens={tokens}/>
-
+ 
             <SecLabel text={lang==="en" ? "Personal Info" : "ข้อมูลส่วนตัว"} tokens={tokens}/>
             <Card tokens={tokens}>
               <InfoRow label={t("profile.weight")}      value={`${(+user.weight).toFixed(1)} ${t("common.kg")}`} tokens={tokens}/>
@@ -419,15 +422,15 @@ export default function Profile() {
               <InfoRow label={t("profile.age")}         value={`${user.age} ${lang==="en"?"yrs":"ปี"}`} tokens={tokens}/>
               <InfoRow label={t("profile.phase")}       value={`${currentPhase.emoji} ${currentPhase.label}`} tokens={tokens} isLast/>
             </Card>
-
+ 
             <SecLabel text={lang==="en" ? "Daily Nutrition Target" : "เป้าโภชนาการ/วัน"} tokens={tokens}/>
             <Card tokens={tokens}>
               <InfoRow label={lang==="en"?"Target Calories":"แคลอรี่เป้าหมาย"} value={`${(user.targetCal??1440).toLocaleString()} kcal`} accent={tokens.sageDk} tokens={tokens}/>
               <InfoRow label="TDEE" value={`${(user.tdee??1740).toLocaleString()} kcal`} tokens={tokens}/>
-              <InfoRow label={t("profile.eating_goal")} value={goalOpt.label} tokens={tokens}/>
-              <InfoRow label={t("profile.activity")}    value={actOpt.label} tokens={tokens} isLast/>
+              <InfoRow label={t("profile.eating_goal")} value={goalLabel} tokens={tokens}/>
+              <InfoRow label={t("profile.activity")}    value={actLabel} tokens={tokens} isLast/>
             </Card>
-
+ 
             <div style={{ background:tokens.roseLt, border:`1px solid ${tokens.rose}`,
               borderRadius:20, padding:"14px 16px", marginTop:4 }}>
               <div style={{ fontSize:12, fontWeight:500, color:"#8B4050", marginBottom:6 }}>Danger Zone</div>
@@ -444,7 +447,7 @@ export default function Profile() {
           </div>
         )}
       </div>
-
+ 
       {showReset && (
         <ResetConfirm
           onConfirm={()=>{ clearAppStorage(); window.location.reload() }}
