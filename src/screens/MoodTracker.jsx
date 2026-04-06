@@ -102,7 +102,7 @@ function LogForm({ onSave, tokens, currentPhase }) {
       <div style={{ marginBottom:14 }}>
         <div style={{ fontSize:11, fontWeight:500, color:tokens.stone,
           letterSpacing:".06em", textTransform:"uppercase", marginBottom:8 }}>
-          อารมณ์วันนี้
+          {t("mood.mood_label")}
         </div>
         <div style={{ display:"flex", gap:6, justifyContent:"space-between" }}>
           {MOODS.map(m => (
@@ -182,7 +182,7 @@ function LogForm({ onSave, tokens, currentPhase }) {
       <div style={{ marginBottom:14 }}>
         <div style={{ fontSize:11, fontWeight:500, color:tokens.stone,
           letterSpacing:".06em", textTransform:"uppercase", marginBottom:8 }}>
-          บันทึกเพิ่มเติม
+          {t("mood.note")}
         </div>
         <textarea
           value={note}
@@ -216,7 +216,7 @@ function LogForm({ onSave, tokens, currentPhase }) {
           transition:"all .2s",
         }}
       >
-        💾 บันทึกอารมณ์วันนี้
+        {t("mood.save")}
       </button>
     </div>
   )
@@ -303,7 +303,7 @@ function MoodChart({ logs, tokens }) {
       borderRadius:20, padding:"14px 16px",
     }}>
       <div style={{ fontSize:13, fontWeight:500, color:tokens.cocoa, marginBottom:12 }}>
-        แนวโน้มอารมณ์ 7 วัน
+        {t("mood.chart_title")}
       </div>
       <div style={{ display:"flex", alignItems:"flex-end",
         gap:6, height:60, marginBottom:8 }}>
@@ -336,7 +336,7 @@ function MoodChart({ logs, tokens }) {
    MOOD TRACKER — main export
 ═══════════════════════════════════════════════════ */
 export default function MoodTracker() {
-  const { tokens, currentPhase, user } = useApp()
+  const { tokens, currentPhase, user, t, lang } = useApp()
   const [logs,    setLogs   ] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("he_moodlogs") ?? "[]")
@@ -363,7 +363,7 @@ export default function MoodTracker() {
       }}>
         <div style={{ fontFamily:"'Playfair Display',serif",
           fontSize:22, color:tokens.cocoa, marginBottom:2 }}>
-          Mood & Energy
+          {t("mood.title")}
         </div>
         <div style={{ fontSize:12, color:tokens.stone }}>
           {currentPhase.emoji} {currentPhase.label} · วันที่ {user.cycleDay}
@@ -374,8 +374,8 @@ export default function MoodTracker() {
       <div style={{ display:"flex", padding:"10px 16px 0",
         gap:8, flexShrink:0 }}>
         {[
-          { id:"log",     label:"😊 บันทึกวันนี้" },
-          { id:"history", label:"📊 ประวัติ"       },
+          { id:"log",     label: t("mood.tab_log") },
+          { id:"history", label: t("mood.tab_history") },
         ].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
             flex:1, padding:"8px",
@@ -402,7 +402,7 @@ export default function MoodTracker() {
                 borderRadius:16, padding:"12px 14px",
               }}>
                 <div style={{ fontSize:12, fontWeight:500, color:tokens.sageDk }}>
-                  ✓ บันทึกวันนี้แล้ว
+                  {t("mood.already_logged")}
                 </div>
                 <div style={{ fontSize:13, color:tokens.cocoaMid, marginTop:4 }}>
                   {MOODS.find(m=>m.id===todayLog.mood)?.emoji}{" "}
@@ -421,7 +421,7 @@ export default function MoodTracker() {
                 <div style={{ textAlign:"center", padding:"40px 0",
                   color:tokens.stone, fontSize:13 }}>
                   <div style={{ fontSize:32, marginBottom:12 }}>😊</div>
-                  ยังไม่มีประวัติ เริ่มบันทึกวันนี้เลย!
+                  {t("mood.no_history")}
                 </div>
               ) : (
                 logs.map((log, i) => (

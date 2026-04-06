@@ -157,7 +157,7 @@ function ResetConfirm({ onConfirm, onClose, tokens }) {
 }
 
 export default function Profile() {
-  const { user, setUser, currentPhase, tokens, showToast } = useApp()
+  const { user, setUser, currentPhase, tokens, showToast, t, lang } = useApp()
   const [editMode,  setEditMode ] = useState(false)
   const [showReset, setShowReset] = useState(false)
   const [form,      setForm     ] = useState({})
@@ -228,7 +228,7 @@ export default function Profile() {
               {editMode ? (form.name||"คุณสาว") : user.name}
             </div>
             <div style={{ fontSize:11, color:tokens.stone }}>
-              {currentPhase.emoji} {currentPhase.label} · วันที่ {user.cycleDay}
+              {currentPhase.emoji} {currentPhase.label} · {t("profile.cycle_day")} {user.cycleDay}
             </div>
           </div>
           {!editMode
@@ -237,13 +237,13 @@ export default function Profile() {
                 borderRadius:12, padding:"8px 16px", fontSize:13, fontWeight:500,
                 color:tokens.lavenderDk, cursor:"pointer",
                 fontFamily:"'DM Sans',sans-serif", flexShrink:0 }}>
-                ✏️ แก้ไข
+                {t("profile.edit")}
               </button>
             : <button onClick={()=>setEditMode(false)} style={{
                 background:"transparent", border:`1px solid ${tokens.border}`,
                 borderRadius:12, padding:"8px 14px", fontSize:13, color:tokens.stone,
                 cursor:"pointer", fontFamily:"'DM Sans',sans-serif", flexShrink:0 }}>
-                ยกเลิก
+                {t("common.cancel")}
               </button>
           }
         </div>
@@ -266,7 +266,7 @@ export default function Profile() {
               onTouchStart={e=>e.currentTarget.style.transform="scale(.98)"}
               onTouchEnd={e=>e.currentTarget.style.transform="scale(1)"}
             >
-              💾  บันทึกโปรไฟล์
+              💾  {t("profile.save").replace("💾 ","")}
             </button>
           </div>
         )}
@@ -310,22 +310,22 @@ export default function Profile() {
         {editMode ? (
           /* ──── EDIT FORM ──── */
           <div>
-            <SecLabel text="ข้อมูลพื้นฐาน" tokens={tokens}/>
+            <SecLabel text={lang==="en" ? "Basic Info" : "ข้อมูลพื้นฐาน"} tokens={tokens}/>
             <div style={row}>
-              <label style={lbl}>ชื่อ</label>
+              <label style={lbl}>{t("profile.name")}</label>
               <input style={inp} value={form.name} onChange={e=>set("name",e.target.value)}
                 onFocus={e=>e.target.style.borderColor=tokens.lavender}
                 onBlur={e=>e.target.style.borderColor=tokens.border}/>
             </div>
             <div style={{...row,display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
               <div>
-                <label style={lbl}>เพศ</label>
+                <label style={lbl}>{t("profile.gender")}</label>
                 <select style={{...inp,cursor:"pointer"}} value={form.gender} onChange={e=>set("gender",e.target.value)}>
-                  <option>หญิง</option><option>ชาย</option>
+                  <option>{t("profile.female")}</option><option>{t("profile.male")}</option>
                 </select>
               </div>
               <div>
-                <label style={lbl}>อายุ (ปี)</label>
+                <label style={lbl}>{t("profile.age")}</label>
                 <input style={inp} type="number" min="10" max="100" value={form.age}
                   onChange={e=>set("age",e.target.value)}
                   onFocus={e=>e.target.style.borderColor=tokens.lavender}
@@ -334,14 +334,14 @@ export default function Profile() {
             </div>
             <div style={{...row,display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
               <div>
-                <label style={lbl}>ส่วนสูง (ซม.)</label>
+                <label style={lbl}>{t("profile.height")}</label>
                 <input style={inp} type="number" min="100" max="250" value={form.height}
                   onChange={e=>set("height",e.target.value)}
                   onFocus={e=>e.target.style.borderColor=tokens.lavender}
                   onBlur={e=>e.target.style.borderColor=tokens.border}/>
               </div>
               <div>
-                <label style={lbl}>น้ำหนัก (กก.)</label>
+                <label style={lbl}>{t("profile.weight")}</label>
                 <input style={inp} type="number" min="20" max="300" step="0.1" value={form.weight}
                   onChange={e=>set("weight",e.target.value)}
                   onFocus={e=>e.target.style.borderColor=tokens.lavender}
@@ -349,44 +349,44 @@ export default function Profile() {
               </div>
             </div>
 
-            <SecLabel text="เป้าหมาย" tokens={tokens}/>
+            <SecLabel text={lang==="en" ? "Goals" : "เป้าหมาย"} tokens={tokens}/>
             <div style={row}>
-              <label style={lbl}>น้ำหนักเป้าหมาย (กก.)</label>
+              <label style={lbl}>{t("profile.goal_weight")}</label>
               <input style={inp} type="number" min="20" max="300" step="0.1" value={form.goalWeight}
                 onChange={e=>set("goalWeight",e.target.value)}
                 onFocus={e=>e.target.style.borderColor=tokens.sage}
                 onBlur={e=>e.target.style.borderColor=tokens.border}/>
             </div>
             <div style={row}>
-              <label style={lbl}>เป้าหมายการกิน</label>
+              <label style={lbl}>{t("profile.eating_goal")}</label>
               <select style={{...inp,cursor:"pointer"}} value={form.goal} onChange={e=>set("goal",e.target.value)}>
                 {GOAL_OPTS.map(o=><option key={o.val} value={o.val}>{o.label}</option>)}
               </select>
             </div>
             <div style={row}>
-              <label style={lbl}>ระดับการออกกำลังกาย</label>
+              <label style={lbl}>{t("profile.activity")}</label>
               <select style={{...inp,cursor:"pointer"}} value={form.activity} onChange={e=>set("activity",e.target.value)}>
                 {ACTIVITY_OPTS.map(o=><option key={o.val} value={o.val}>{o.label}</option>)}
               </select>
             </div>
 
-            <SecLabel text="รอบฮอร์โมน" tokens={tokens}/>
+            <SecLabel text={lang==="en" ? "Hormone Cycle" : "รอบฮอร์โมน"} tokens={tokens}/>
             <div style={row}>
-              <label style={lbl}>เฟสปัจจุบัน</label>
+              <label style={lbl}>{t("profile.phase")}</label>
               <select style={{...inp,cursor:"pointer"}} value={form.currentPhase} onChange={e=>set("currentPhase",e.target.value)}>
                 {PHASE_OPTS.map(o=><option key={o.val} value={o.val}>{o.label}</option>)}
               </select>
             </div>
             <div style={{...row,display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
               <div>
-                <label style={lbl}>วันที่ในรอบ</label>
+                <label style={lbl}>{t("profile.cycle_day")}</label>
                 <input style={inp} type="number" min="1" max="40" value={form.cycleDay}
                   onChange={e=>set("cycleDay",e.target.value)}
                   onFocus={e=>e.target.style.borderColor=tokens.lavender}
                   onBlur={e=>e.target.style.borderColor=tokens.border}/>
               </div>
               <div>
-                <label style={lbl}>ความยาวรอบ (วัน)</label>
+                <label style={lbl}>{t("profile.cycle_length")}</label>
                 <input style={inp} type="number" min="21" max="40" value={form.cycleLength}
                   onChange={e=>set("cycleLength",e.target.value)}
                   onFocus={e=>e.target.style.borderColor=tokens.lavender}
@@ -401,7 +401,7 @@ export default function Profile() {
               border:"none", borderRadius:16, fontSize:15, fontWeight:600,
               fontFamily:"'DM Sans',sans-serif", cursor:"pointer",
             }}>
-              💾 บันทึกโปรไฟล์
+              {t("profile.save")}
             </button>
           </div>
 
@@ -411,34 +411,34 @@ export default function Profile() {
             <GoalProgress weight={user.weight} goalWeight={user.goalWeight} tokens={tokens}/>
             <BMIScale bmi={user.bmi??calcBMI(user.weight,user.height)} tokens={tokens}/>
 
-            <SecLabel text="ข้อมูลส่วนตัว" tokens={tokens}/>
+            <SecLabel text={lang==="en" ? "Personal Info" : "ข้อมูลส่วนตัว"} tokens={tokens}/>
             <Card tokens={tokens}>
-              <InfoRow label="น้ำหนักปัจจุบัน" value={`${(+user.weight).toFixed(1)} กก.`} tokens={tokens}/>
-              <InfoRow label="น้ำหนักเป้าหมาย" value={`${(+user.goalWeight).toFixed(1)} กก.`} tokens={tokens}/>
-              <InfoRow label="ส่วนสูง" value={`${user.height} ซม.`} tokens={tokens}/>
-              <InfoRow label="อายุ" value={`${user.age} ปี`} tokens={tokens}/>
-              <InfoRow label="เฟสปัจจุบัน" value={`${currentPhase.emoji} ${currentPhase.label}`} tokens={tokens} isLast/>
+              <InfoRow label={t("profile.weight")}      value={`${(+user.weight).toFixed(1)} ${t("common.kg")}`} tokens={tokens}/>
+              <InfoRow label={t("profile.goal_weight")} value={`${(+user.goalWeight).toFixed(1)} ${t("common.kg")}`} tokens={tokens}/>
+              <InfoRow label={t("profile.height")}      value={`${user.height} ${t("common.cm")}`} tokens={tokens}/>
+              <InfoRow label={t("profile.age")}         value={`${user.age} ${lang==="en"?"yrs":"ปี"}`} tokens={tokens}/>
+              <InfoRow label={t("profile.phase")}       value={`${currentPhase.emoji} ${currentPhase.label}`} tokens={tokens} isLast/>
             </Card>
 
-            <SecLabel text="เป้าโภชนาการ/วัน" tokens={tokens}/>
+            <SecLabel text={lang==="en" ? "Daily Nutrition Target" : "เป้าโภชนาการ/วัน"} tokens={tokens}/>
             <Card tokens={tokens}>
-              <InfoRow label="แคลอรี่เป้าหมาย" value={`${(user.targetCal??1440).toLocaleString()} kcal`} accent={tokens.sageDk} tokens={tokens}/>
+              <InfoRow label={lang==="en"?"Target Calories":"แคลอรี่เป้าหมาย"} value={`${(user.targetCal??1440).toLocaleString()} kcal`} accent={tokens.sageDk} tokens={tokens}/>
               <InfoRow label="TDEE" value={`${(user.tdee??1740).toLocaleString()} kcal`} tokens={tokens}/>
-              <InfoRow label="เป้าการกิน" value={goalOpt.label} tokens={tokens}/>
-              <InfoRow label="ออกกำลังกาย" value={actOpt.label} tokens={tokens} isLast/>
+              <InfoRow label={t("profile.eating_goal")} value={goalOpt.label} tokens={tokens}/>
+              <InfoRow label={t("profile.activity")}    value={actOpt.label} tokens={tokens} isLast/>
             </Card>
 
             <div style={{ background:tokens.roseLt, border:`1px solid ${tokens.rose}`,
               borderRadius:20, padding:"14px 16px", marginTop:4 }}>
               <div style={{ fontSize:12, fontWeight:500, color:"#8B4050", marginBottom:6 }}>Danger Zone</div>
               <div style={{ fontSize:12, color:"#8B4050", lineHeight:1.55, marginBottom:12 }}>
-                รีเซ็ตจะลบข้อมูลทุกอย่าง ไม่สามารถกู้คืนได้
+                {t("profile.reset_warn")}
               </div>
               <button onClick={()=>setShowReset(true)} style={{
                 width:"100%", padding:"11px", background:"transparent", color:"#8B4050",
                 border:`1.5px solid ${tokens.rose}`, borderRadius:14, fontSize:13,
                 fontWeight:500, fontFamily:"'DM Sans',sans-serif", cursor:"pointer" }}>
-                รีเซ็ตข้อมูลทั้งหมด
+                {t("profile.reset")}
               </button>
             </div>
           </div>

@@ -17,7 +17,8 @@ const THAI_MONTHS_SHORT = [
   "ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค.",
 ]
 const DAY_LABELS = ["อา","จ","อ","พ","พฤ","ศ","ส"]
-const MEAL_SLOTS = ["เช้า","กลางวัน","บ่าย","เย็น","ก่อนนอน"]
+const MEAL_SLOTS_TH = ["เช้า","กลางวัน","บ่าย","เย็น","ก่อนนอน"]
+const MEAL_SLOTS_EN = ["Morning","Lunch","Afternoon","Dinner","Bedtime"]
 
 /* ใช้ FOOD_DB จาก foodDatabase.js — เหมือนหน้าแคลอรี่ */
 
@@ -49,7 +50,9 @@ function calBarColor(cal, target) {
    ADD FOOD MODAL — ใช้ FOOD_DB 147 รายการ เหมือนหน้าแคลอรี่
 ═══════════════════════════════════════════════════ */
 function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
-  const [meal,    setMeal   ] = useState("เช้า")
+  const { lang, t: tl } = useApp()
+  const MEAL_SLOTS = lang==="en" ? MEAL_SLOTS_EN : MEAL_SLOTS_TH
+  const [meal,    setMeal   ] = useState(MEAL_SLOTS_TH[0])
   const [search,  setSearch ] = useState("")
   const [cuisine, setCuisine] = useState("all")
   const [tab,     setTab    ] = useState("db")
@@ -109,7 +112,7 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
           borderBottom:`1px solid ${tokens.borderLt}`,flexShrink:0,
         }}>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:tokens.cocoa}}>
-            เพิ่มอาหาร
+            {t("calendar.add_food")}
           </div>
           <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",
             fontSize:18,color:tokens.stone,padding:"4px 8px"}}>✕</button>
@@ -131,7 +134,7 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
 
         {/* tab switcher */}
         <div style={{display:"flex",padding:"0 16px 8px",flexShrink:0,gap:8}}>
-          {[{id:"db",label:"🍽️ รายการอาหาร"},{id:"custom",label:"✏️ กำหนดเอง"}].map(t=>(
+          {[{id:"db",label:`🍽️ ${t("calendar.food_list")}`},{id:"custom",label:`✏️ ${t("calendar.custom")}`}].map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id)} style={{
               flex:1,padding:"7px",
               border:`1px solid ${tokens.border}`,
@@ -227,7 +230,7 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
                     color:tokens.cocoa,background:tokens.cream,outline:"none"}}/>
                 <input type="text" value={custom.name}
                   onChange={e=>setCustom(c=>({...c,name:e.target.value}))}
-                  placeholder="ชื่ออาหาร..."
+                  placeholder={t("calendar.food_name")}
                   style={{flex:1,padding:"9px 14px",
                     border:`1px solid ${tokens.border}`,borderRadius:12,
                     fontSize:13,fontFamily:"'DM Sans',sans-serif",
@@ -235,7 +238,7 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
               </div>
               <input type="number" value={custom.cal}
                 onChange={e=>setCustom(c=>({...c,cal:e.target.value}))}
-                placeholder="แคลอรี่ (kcal)"
+                placeholder={t("calendar.cal_unit")}
                 style={{padding:"9px 14px",border:`1px solid ${tokens.border}`,borderRadius:12,
                   fontSize:13,fontFamily:"'DM Sans',sans-serif",
                   color:tokens.cocoa,background:tokens.cream,outline:"none"}}/>
@@ -260,7 +263,7 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
                 fontFamily:"'DM Sans',sans-serif",
                 cursor:custom.name.trim()&&custom.cal?"pointer":"default",
               }}>
-              💾 เพิ่มอาหาร
+              {t("calendar.add_btn")}
             </button>
           </div>
         )}
@@ -372,7 +375,7 @@ function DaySummary({ dateKey, entries, targetCal, tokens }) {
             {formatDateThai(dateKey)}
           </div>
           <div style={{fontSize:11,color:tokens.stone,marginTop:2}}>
-            {entries.length>0?`${entries.length} รายการ`:"ยังไม่มีรายการ"}
+            {entries.length>0?`${entries.length} ${lang==="en"?"items":"รายการ"}`:t("calendar.no_entries")}
           </div>
         </div>
         <div style={{textAlign:"right"}}>
@@ -421,7 +424,7 @@ function FoodEntryList({ dateKey, entries, onDelete, tokens }) {
     return(
       <div style={{padding:"24px 16px",textAlign:"center",color:tokens.stone,fontSize:13}}>
         <div style={{fontSize:28,marginBottom:8}}>🍽️</div>
-        ยังไม่มีรายการอาหารวันนี้
+        {t("calendar.no_entries")}
       </div>
     )
   }
@@ -515,7 +518,7 @@ function MonthlySummary({ year, month, diary, targetCal, tokens }) {
 ═══════════════════════════════════════════════════ */
 export default function Foodcalendar() {
   /* ── Pull diary + helpers from context (localStorage-backed) ── */
-  const { user, diary, addDiaryEntry, deleteDiaryEntry, tokens } = useApp()
+  const { user, diary, addDiaryEntry, deleteDiaryEntry, tokens, t, lang } = useApp()
 
   const today = new Date()
   const [viewYear,    setViewYear   ] = useState(today.getFullYear())
@@ -549,7 +552,7 @@ export default function Foodcalendar() {
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:tokens.cocoa,marginBottom:2}}>
           ปฏิทินอาหาร
         </div>
-        <div style={{fontSize:12,color:tokens.stone}}>บันทึกอาหารรายวัน · แคลอรี่ต่อวัน</div>
+        <div style={{fontSize:12,color:tokens.stone}}>{lang==="en" ? "Daily food log · calories per day" : "บันทึกอาหารรายวัน · แคลอรี่ต่อวัน"}</div>
       </div>
 
       <div className="scroll-body" style={{flex:1,paddingBottom:160}}>
@@ -599,7 +602,7 @@ export default function Foodcalendar() {
             onMouseDown={e=>e.currentTarget.style.opacity=".8"}
             onMouseUp={e=>e.currentTarget.style.opacity="1"}>
             <span style={{fontSize:16}}>+</span>
-            เพิ่มอาหาร {formatDateThai(selectedKey)}
+            {t("calendar.add_food")} {formatDateThai(selectedKey)}
           </button>
         </div>
 

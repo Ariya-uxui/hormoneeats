@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, createContext, useContext } from "react"
+import { getT } from "./translations.js"
 import { useLocalStorage, STORAGE_KEYS } from "./hooks/useLocalStorage.js"
 import Onboarding   from "./screens/Onboarding.jsx"
 import Home         from "./screens/Home.jsx"
@@ -165,14 +166,17 @@ function PhoneShell({children}){
 
 /* ── Bottom nav ── */
 function BottomNav({current,onChange}){
+  const { t } = useContext(AppContext)
+  const NAV_KEYS = ["home","calendar","tracker","mood","weight","profile"]
+  const NAV_EMOJIS = { home:"🏠", calendar:"📅", tracker:"🥗", mood:"😊", weight:"📊", profile:"👤" }
   return(
     <nav style={{position:"absolute",bottom:0,left:0,right:0,height:82,
       background:"rgba(250,248,245,.97)",borderTop:`1px solid ${tokens.border}`,
       display:"flex",alignItems:"flex-start",paddingTop:8,zIndex:200,backdropFilter:"blur(16px)"}}>
-      {NAV_ITEMS.map(item=>{
-        const active=current===item.id
+      {NAV_KEYS.map(id=>{
+        const active=current===id
         return(
-          <button key={item.id} onClick={()=>onChange(item.id)} style={{flex:1,display:"flex",
+          <button key={id} onClick={()=>onChange(id)} style={{flex:1,display:"flex",
             flexDirection:"column",alignItems:"center",gap:3,padding:"4px 0",
             border:"none",background:"transparent",cursor:"pointer",transition:"transform .15s"}}
             onMouseDown={e=>e.currentTarget.style.transform="scale(.9)"}
@@ -182,12 +186,12 @@ function BottomNav({current,onChange}){
             <div style={{width:32,height:32,borderRadius:10,display:"flex",alignItems:"center",
               justifyContent:"center",fontSize:17,
               background:active?tokens.lavenderLt:"transparent",transition:"background .2s"}}>
-              {item.emoji}
+              {NAV_EMOJIS[id]}
             </div>
             <span style={{fontSize:9.5,fontWeight:500,
               color:active?tokens.lavenderDk:tokens.stone,
               letterSpacing:".01em",transition:"color .2s"}}>
-              {item.label}
+              {t(`nav.${id}`)}
             </span>
             <div style={{width:4,height:4,borderRadius:"50%",
               background:active?tokens.lavenderDk:"transparent",transition:"background .2s"}}/>
@@ -229,6 +233,7 @@ export default function App(){
 
   /* ── Navigation (session only — intentional) ── */
   const [screen, setScreen] = useState("quiz")
+  const [lang,   setLang  ] = useState("th")
 
   /* ── Persistent state ── */
   const [user,          setUser         ] = useLocalStorage(STORAGE_KEYS.user,          DEFAULT_USER)
@@ -250,14 +255,14 @@ export default function App(){
   function navTo(id){ if(id!==screen) setScreen(id) }
 
   /* ── Quiz complete → save hormone type → onboarding ── */
-  function handleQuizComplete({ hormoneType, recommendedPhase }) {
-    setUser(u => ({
-      ...u,
-      hormoneType,
-      currentPhase: recommendedPhase ?? u.currentPhase,
-    }))
-    setScreen("onboarding")
-  }
+ function handleQuizComplete({ hormoneType, recommendedPhase }) {
+  setUser(u => ({
+    ...u,
+    hormoneType,
+    currentPhase: recommendedPhase ?? u.currentPhase,
+  }))
+  setTimeout(() => setScreen("onboarding"), 50)
+}
 
   /* ── Log weight ── */
   function logWeight(value){
@@ -353,6 +358,7 @@ export default function App(){
   const totalFat     = todayEntries.reduce((s,f)=>s+(f.fat??0),        0)
 
   /* ── Context ── */
+  const t = getT(lang)
   const ctx = {
     user, setUser,
     weightHistory, logWeight,
@@ -364,6 +370,7 @@ export default function App(){
     navTo, showToast,
     currentPhase: PHASES[user.currentPhase] ?? PHASES.ovulation,
     PHASES, tokens,
+    lang, setLang, t,
   }
 
   const screens = {

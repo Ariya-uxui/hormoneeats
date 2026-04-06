@@ -116,7 +116,9 @@ function getTodayMeal(hormoneType) {
  
 /* TopBar */
 function TopBar({ user }) {
-  const { tokens } = useApp()
+  const { tokens, lang, setLang, t } = useApp()
+  const h = new Date().getHours()
+  const greeting = h < 12 ? t("home.greeting_morning") : h < 17 ? t("home.greeting_afternoon") : t("home.greeting_evening")
   return (
     <div className="fade-up" style={{
       background: tokens.creamSoft,
@@ -127,7 +129,7 @@ function TopBar({ user }) {
     }}>
       <div>
         <div style={{ fontSize: 11, color: tokens.stone, letterSpacing: ".03em", marginBottom: 3 }}>
-          {getGreeting()}
+          {greeting}
         </div>
         <div style={{
           fontFamily: "'Playfair Display', serif",
@@ -136,15 +138,33 @@ function TopBar({ user }) {
           {user.name}
         </div>
       </div>
-      {/* Avatar */}
-      <div style={{
-        width: 42, height: 42, borderRadius: "50%",
-        background: tokens.lavenderLt,
-        border: `2.5px solid ${tokens.rose}`,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 19,
-      }}>
-        🌸
+      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+        {/* Lang toggle */}
+        <div style={{ display:"flex", background:tokens.cream, border:`1px solid ${tokens.border}`, borderRadius:999, overflow:"hidden" }}>
+          {["th","en"].map(l => (
+            <button key={l} onClick={() => setLang(l)} style={{
+              padding:"5px 11px",
+              background: lang===l ? tokens.cocoa : "transparent",
+              color:      lang===l ? tokens.cream  : tokens.stone,
+              border:"none", cursor:"pointer",
+              fontSize:11, fontWeight:500,
+              fontFamily:"'DM Sans',sans-serif",
+              transition:"all .2s",
+            }}>
+              {l==="th" ? "TH" : "EN"}
+            </button>
+          ))}
+        </div>
+        {/* Avatar */}
+        <div style={{
+          width: 42, height: 42, borderRadius: "50%",
+          background: tokens.lavenderLt,
+          border: `2.5px solid ${tokens.rose}`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 19,
+        }}>
+          🌸
+        </div>
       </div>
     </div>
   )
@@ -152,7 +172,7 @@ function TopBar({ user }) {
  
 /* PhaseBanner */
 function PhaseBanner({ phase, cycleDay, onPress }) {
-  const { tokens } = useApp()
+  const { tokens, t } = useApp()
   return (
     <div
       className="fade-up"
@@ -185,7 +205,7 @@ function PhaseBanner({ phase, cycleDay, onPress }) {
         pointerEvents: "none",
       }} />
       <div style={{ fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", opacity: .8, marginBottom: 4 }}>
-        เฟสของคุณวันนี้
+        {t("home.phase_today")}
       </div>
       <div style={{
         fontFamily: "'Playfair Display', serif",
@@ -204,7 +224,7 @@ function PhaseBanner({ phase, cycleDay, onPress }) {
         fontSize: 11, fontWeight: 500,
         backdropFilter: "blur(4px)",
       }}>
-        วันที่ {cycleDay} ของรอบ →
+        {t("home.cycle_day")} {cycleDay} {t("home.cycle_of")}
       </span>
     </div>
   )
@@ -212,16 +232,16 @@ function PhaseBanner({ phase, cycleDay, onPress }) {
  
 /* StatsStrip */
 function StatsStrip({ totalCal, targetCal, weight }) {
-  const { tokens } = useApp()
+  const { tokens, t } = useApp()
  
   const dayScore = Math.min(100, Math.max(0,
     Math.round(100 - Math.abs(totalCal - targetCal) / targetCal * 60)
   ))
  
   const stats = [
-    { value: totalCal.toLocaleString(), label: "kcal วันนี้" },
-    { value: weight.toFixed(1), label: "น้ำหนัก (กก.)", unit: "" },
-    { value: dayScore, label: "คะแนนวัน", accent: tokens.sageDk },
+    { value: totalCal.toLocaleString(), label: t("home.stats_cal") },
+    { value: weight.toFixed(1), label: t("home.stats_weight"), unit: "" },
+    { value: dayScore, label: t("home.stats_score"), accent: tokens.sageDk },
   ]
  
   return (
@@ -254,13 +274,21 @@ function StatsStrip({ totalCal, targetCal, weight }) {
  
 /* InsightBand */
 function InsightBand({ phase }) {
-  const { tokens } = useApp()
+  const { tokens, lang } = useApp()
  
   const insights = {
-    ovulation: "กินโปรตีนสูง + ผักใบเขียว ช่วยขับ Estrogen ส่วนเกิน แขนจะดูกระชับใน 1 สัปดาห์",
-    follicular: "ช่วงนี้ร่างกายไวต่อ Insulin มาก หลีกเลี่ยงน้ำตาลเพื่อ maximize การลดไขมัน",
-    luteal: "อยากหวานคือสัญญาณ Progesterone สูง ลองกล้วยหรือดาร์กช็อกแทนขนมหวาน",
-    menstrual: "เพิ่มธาตุเหล็กจากผักโขมและตับ เพื่อชดเชยที่ร่างกายสูญเสียไป",
+    th: {
+      ovulation: "กินโปรตีนสูง + ผักใบเขียว ช่วยขับ Estrogen ส่วนเกิน แขนจะดูกระชับใน 1 สัปดาห์",
+      follicular: "ช่วงนี้ร่างกายไวต่อ Insulin มาก หลีกเลี่ยงน้ำตาลเพื่อ maximize การลดไขมัน",
+      luteal: "อยากหวานคือสัญญาณ Progesterone สูง ลองกล้วยหรือดาร์กช็อกแทนขนมหวาน",
+      menstrual: "เพิ่มธาตุเหล็กจากผักโขมและตับ เพื่อชดเชยที่ร่างกายสูญเสียไป",
+    },
+    en: {
+      ovulation: "High protein + leafy greens help flush excess Estrogen — you'll feel leaner in 1 week.",
+      follicular: "Your body is highly insulin-sensitive now. Cut sugar to maximize fat loss.",
+      luteal: "Sweet cravings signal high Progesterone. Try banana or dark chocolate instead.",
+      menstrual: "Boost iron from spinach and liver to replace what your body loses.",
+    },
   }
  
   return (
@@ -278,7 +306,7 @@ function InsightBand({ phase }) {
         flexShrink: 0, marginTop: 5,
       }} />
       <div style={{ fontSize: 12, color: tokens.lavenderDk, lineHeight: 1.65 }}>
-        {insights[phase.key]}
+        {(insights[lang] ?? insights.th)[phase.key]}
       </div>
     </div>
   )
@@ -387,7 +415,7 @@ function FoodLogList({ log }) {
  
 /* AddFoodButton */
 function AddFoodButton({ onPress }) {
-  const { tokens } = useApp()
+  const { tokens, t } = useApp()
   return (
     <span
       onClick={onPress}
@@ -400,14 +428,15 @@ function AddFoodButton({ onPress }) {
         color: tokens.cocoa,
       }}
     >
-      + เพิ่ม
+      {t("home.add")}
     </span>
   )
 }
  
  
 /* MoodBanner */
-function MoodBanner({ onPress, tokens }) {
+function MoodBanner({ onPress }) {
+  const { tokens, t } = useApp()
   let todayMood = null
   try {
     const logs = JSON.parse(localStorage.getItem("he_moodlogs") ?? "[]")
@@ -437,10 +466,10 @@ function MoodBanner({ onPress, tokens }) {
         <div>
           <div style={{ fontSize:13, fontWeight:500,
             color: todayMood ? tokens.sageDk : tokens.lavenderDk }}>
-            {todayMood ? "บันทึกอารมณ์แล้ว ✓" : "บันทึกอารมณ์วันนี้"}
+            {todayMood ? t("home.mood_logged") : t("home.mood_cta")}
           </div>
           <div style={{ fontSize:10, color:tokens.stone, marginTop:2 }}>
-            {todayMood ? "กดเพื่อดูประวัติ" : "Mood & Energy Tracker →"}
+            {todayMood ? t("home.mood_tap") : t("home.mood_sub")}
           </div>
         </div>
       </div>
@@ -450,12 +479,14 @@ function MoodBanner({ onPress, tokens }) {
 }
  
 /* TodayMealCard */
-function TodayMealCard({ hormoneType, tokens }) {
+function TodayMealCard({ hormoneType }) {
+  const { tokens, t, lang } = useApp()
   const meal = getTodayMeal(hormoneType)
   if (!meal) return null
  
-  const days = ["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์"]
-  const today = days[new Date().getDay()]
+  const days_th = ["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์"]
+  const days_en = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
+  const today = lang === "en" ? days_en[new Date().getDay()] : days_th[new Date().getDay()]
  
   return (
     <div className="fade-up" style={{
@@ -467,14 +498,14 @@ function TodayMealCard({ hormoneType, tokens }) {
       <div style={{ display:"flex", justifyContent:"space-between",
         alignItems:"center", marginBottom:10 }}>
         <div style={{ fontSize:13, fontWeight:500, color:tokens.cocoa }}>
-          📅 แผนอาหารวัน{today}
+          {t("home.meal_plan")}{lang==="en" ? " " : ""}{today}
         </div>
       </div>
       <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
         {[
-          { icon:"🌅", label:"เช้า",       val:meal.b },
-          { icon:"☀️", label:"กลางวัน",   val:meal.l },
-          { icon:"🌙", label:"เย็น",       val:meal.d },
+          { icon:"🌅", label:t("home.breakfast"), val:meal.b },
+          { icon:"☀️", label:t("home.lunch"),     val:meal.l },
+          { icon:"🌙", label:t("home.dinner"),     val:meal.d },
         ].map(m => (
           <div key={m.label} style={{
             display:"flex", gap:10, alignItems:"flex-start",
@@ -505,7 +536,7 @@ function TodayMealCard({ hormoneType, tokens }) {
 export default function Home() {
   const {
     user, totalCal, todayEntries,
-    currentPhase, navTo, toggleCartItem, cartItems, tokens,
+    currentPhase, navTo, toggleCartItem, cartItems, t,
   } = useApp()
  
   const suggestedFoods = PHASE_FOODS[user.currentPhase] ?? PHASE_FOODS.ovulation
@@ -541,15 +572,15 @@ export default function Home() {
         <InsightBand phase={currentPhase} />
  
         {/* Mood Banner */}
-        <MoodBanner onPress={() => navTo("mood")} tokens={tokens} />
+        <MoodBanner onPress={() => navTo("mood")} />
  
         {/* Today Meal Plan */}
-        <TodayMealCard hormoneType={user.hormoneType ?? "balanced"} tokens={tokens} />
+        <TodayMealCard hormoneType={user.hormoneType ?? "balanced"} />
  
         {/* Food suggestions */}
         <SectionRow
-          title="แนะนำวันนี้"
-          action="ดูทั้งหมด ›"
+          title={t("home.suggest_today")}
+          action={t("home.see_all")}
           onAction={() => navTo("tracker")}
         />
         <FoodRail
@@ -560,7 +591,7 @@ export default function Home() {
  
         {/* Food log */}
         <SectionRow
-          title="บันทึกวันนี้"
+          title={t("home.log_today")}
           action={<AddFoodButton onPress={() => navTo("tracker")} />}
         />
         <FoodLogList log={todayEntries ?? []} />

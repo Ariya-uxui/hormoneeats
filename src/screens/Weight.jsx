@@ -19,15 +19,15 @@ import { useApp, ScreenWrapper } from "../App"
    HERO BLOCK — big weight display
 ═══════════════════════════════════════════════════ */
 function WeightHero({ weight, goalWeight }) {
-  const { tokens } = useApp()
+  const { tokens, t, lang } = useApp()
   const remaining = Math.max(0, weight - goalWeight)
   const weeksLeft  = remaining > 0 ? Math.ceil(remaining / 0.3) : 0
   const lostTotal  = parseFloat((55.2 - weight).toFixed(1))
 
   const cols = [
-    { val: goalWeight.toFixed(1), lbl: "เป้าหมาย (กก.)" },
-    { val: remaining.toFixed(1),  lbl: "เหลืออีก (กก.)" },
-    { val: weeksLeft || "—",      lbl: "สัปดาห์โดยประมาณ" },
+    { val: goalWeight.toFixed(1), lbl: t("weight.goal") },
+    { val: remaining.toFixed(1),  lbl: lang==="en" ? "Remaining (kg)" : "เหลืออีก (กก.)" },
+    { val: weeksLeft || "—",      lbl: lang==="en" ? "Est. weeks" : "สัปดาห์โดยประมาณ" },
   ]
 
   return (
@@ -45,7 +45,7 @@ function WeightHero({ weight, goalWeight }) {
       <div style={{ position:"absolute", bottom:-35, left:-20, width:110, height:110, borderRadius:"50%", background:"rgba(255,255,255,.05)", pointerEvents:"none" }} />
 
       <div style={{ fontSize:10, letterSpacing:".1em", textTransform:"uppercase", opacity:.7, marginBottom:4, position:"relative" }}>
-        น้ำหนักปัจจุบัน
+        {t("weight.current")}
       </div>
       <div style={{
         fontFamily:"'Playfair Display', serif",
@@ -66,7 +66,7 @@ function WeightHero({ weight, goalWeight }) {
           padding:"4px 12px",
           fontSize:11, fontWeight:500,
         }}>
-          ↓ ลดไปแล้ว {lostTotal.toFixed(1)} กก.
+          lang==="en" ? `↓ Lost ${lostTotal.toFixed(1)} kg` : `↓ ลดไปแล้ว ${lostTotal.toFixed(1)} กก.`
         </div>
       )}
 
@@ -147,7 +147,7 @@ function WeightChart({ history, goalWeight }) {
         stroke={tokens.gold} strokeWidth="1.2" strokeDasharray="5 4"/>
       <text x="10" y={goalY - 3}
         fontSize="8" fill={tokens.gold} fontFamily="DM Sans">
-        เป้า {goalWeight}
+        {lang==="en" ? "Goal" : "เป้า"} {goalWeight}
       </text>
 
       {/* Area fill */}
@@ -193,7 +193,7 @@ function WeightChart({ history, goalWeight }) {
    CHART BLOCK
 ═══════════════════════════════════════════════════ */
 function ChartBlock({ history, goalWeight }) {
-  const { tokens } = useApp()
+  const { tokens, lang } = useApp()
   return (
     <div className="fade-up" style={{
       margin: "10px 16px 0",
@@ -202,7 +202,7 @@ function ChartBlock({ history, goalWeight }) {
       borderRadius: 22, padding: 16,
     }}>
       <div style={{ fontSize:13, fontWeight:500, color:tokens.cocoa, marginBottom:14 }}>
-        กราฟน้ำหนัก
+        {lang==="en" ? "Weight Chart" : "กราฟน้ำหนัก"}
       </div>
       <WeightChart history={history} goalWeight={goalWeight} />
     </div>
@@ -213,7 +213,7 @@ function ChartBlock({ history, goalWeight }) {
    WEEKLY PROGRESS PILL
 ═══════════════════════════════════════════════════ */
 function WeeklyProgress({ history }) {
-  const { tokens } = useApp()
+  const { tokens, lang } = useApp()
 
   /* Compare latest vs 7 entries ago */
   const latest = history[0]?.value
@@ -236,13 +236,13 @@ function WeeklyProgress({ history }) {
         display:"flex", justifyContent:"space-between", alignItems:"center",
       }}>
         <span style={{ fontSize:12, color: isGood ? tokens.sageDk : "#8B4050" }}>
-          เทียบกับ {week.length} รายการก่อน
+          lang==="en" ? `vs last ${week.length} entries` : `เทียบกับ ${week.length} รายการก่อน`
         </span>
         <span style={{
           fontSize:14, fontWeight:500,
           color: isGood ? tokens.sageDk : "#8B4050",
         }}>
-          {isGood ? "↓ " : "↑ "}{Math.abs(diff).toFixed(1)} กก.
+          {isGood ? "↓ " : "↑ "}{Math.abs(diff).toFixed(1)} {t("common.kg")}
         </span>
       </div>
       <div style={{
@@ -257,7 +257,7 @@ function WeeklyProgress({ history }) {
           {(diff / (week.length) * 4).toFixed(1)}
         </div>
         <div style={{ fontSize:9, color:"#7A5030", marginTop:2, textAlign:"center", lineHeight:1.3 }}>
-          กก./เดือน
+          {lang==="en" ? "kg/mo" : "กก./เดือน"}
         </div>
       </div>
     </div>
@@ -268,14 +268,14 @@ function WeeklyProgress({ history }) {
    LOG INPUT BLOCK
 ═══════════════════════════════════════════════════ */
 function LogBlock({ history, onLog }) {
-  const { tokens } = useApp()
+  const { tokens, t, lang } = useApp()
   const [inputVal, setInputVal] = useState("")
   const [error, setError]       = useState("")
 
   function handleLog() {
     const v = parseFloat(inputVal)
     if (isNaN(v) || v < 20 || v > 300) {
-      setError("กรุณากรอกน้ำหนักที่ถูกต้อง (20–300 กก.)")
+      setError("lang==="en" ? "Please enter a valid weight (20–300 kg)" : "กรุณากรอกน้ำหนักที่ถูกต้อง (20–300 กก.)"")
       return
     }
     setError("")
@@ -291,7 +291,7 @@ function LogBlock({ history, onLog }) {
       borderRadius: 22, padding: 16,
     }}>
       <div style={{ fontSize:13, fontWeight:500, color:tokens.cocoa, marginBottom:10 }}>
-        บันทึกน้ำหนักวันนี้
+        {t("weight.log")}
       </div>
 
       {/* Input row */}
@@ -329,7 +329,7 @@ function LogBlock({ history, onLog }) {
           onMouseDown={e => e.currentTarget.style.opacity = ".8"}
           onMouseUp={e   => e.currentTarget.style.opacity = "1"}
         >
-          บันทึก
+          {t("common.save")}
         </button>
       </div>
 
@@ -350,10 +350,10 @@ function LogBlock({ history, onLog }) {
           }}>
             <span style={{ fontSize:12, color:tokens.stone }}>{h.date}</span>
             <span style={{ fontSize:14, fontWeight:500, color:tokens.cocoa }}>
-              {h.value.toFixed(1)} กก.
+              {h.value.toFixed(1)} {t("common.kg")}
             </span>
             {h.change === null
-              ? <span style={{ fontSize:11, fontWeight:500, padding:"3px 9px", borderRadius:999, background:tokens.cream, color:tokens.stone }}>เริ่มต้น</span>
+              ? <span style={{ fontSize:11, fontWeight:500, padding:"3px 9px", borderRadius:999, background:tokens.cream, color:tokens.stone }}>{lang==="en" ? "Start" : "เริ่มต้น"}</span>
               : <span style={{
                   fontSize:11, fontWeight:500,
                   padding:"3px 9px", borderRadius:999,
@@ -374,7 +374,7 @@ function LogBlock({ history, onLog }) {
    WEIGHT SCREEN — main export
 ═══════════════════════════════════════════════════ */
 export default function Weight() {
-  const { user, weightHistory, logWeight, tokens } = useApp()
+  const { user, weightHistory, logWeight, tokens, t, lang } = useApp()
 
   return (
     <ScreenWrapper>
@@ -389,11 +389,11 @@ export default function Weight() {
           fontFamily:"'Playfair Display', serif",
           fontSize:22, color:tokens.cocoa, marginBottom:2,
         }}>
-          ติดตามน้ำหนัก
+          {t("weight.title")}
         </div>
         <div style={{ fontSize:12, color:tokens.stone }}>
-          เป้าหมาย {user.goalWeight.toFixed(0)} กก.
-          · อัตราที่เหมาะ 0.3–0.5 กก./สัปดาห์
+          {t("weight.goal")} {user.goalWeight.toFixed(0)} {t("common.kg")}
+          · {lang==="en" ? "Ideal rate 0.3–0.5 kg/week" : "อัตราที่เหมาะ 0.3–0.5 กก./สัปดาห์"}
         </div>
       </div>
 

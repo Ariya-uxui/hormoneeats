@@ -61,9 +61,9 @@ function CalorieRing({ current, target, tokens }) {
 /* ── Macro Bars ── */
 function MacroBars({ protein, carb, fat, tokens }) {
   const bars = [
-    { label:"โปรตีน", val:protein, target:95,  color:tokens.sage  },
-    { label:"คาร์บ",  val:carb,    target:160, color:tokens.gold  },
-    { label:"ไขมัน",  val:fat,     target:50,  color:tokens.rose  },
+    { label:t("tracker.protein"), val:protein, target:95,  color:tokens.sage  },
+    { label:t("tracker.carb"),    val:carb,    target:160, color:tokens.gold  },
+    { label:t("tracker.fat"),     val:fat,     target:50,  color:tokens.rose  },
   ]
   return (
     <div style={{ flex:1, display:"flex", flexDirection:"column", gap:9 }}>
@@ -116,12 +116,12 @@ function TodayLog({ entries, onDelete, totalCal, targetCal, tokens }) {
       <div style={{ display:"flex", justifyContent:"space-between",
         alignItems:"center", marginBottom:8 }}>
         <span style={{ fontSize:13, fontWeight:500, color:tokens.cocoa }}>
-          บันทึกวันนี้ ({entries.length} รายการ)
+          {t("tracker.title")} ({entries.length})
         </span>
         <span style={{ fontSize:12, fontWeight:500,
           color: remaining >= 0 ? tokens.sageDk : "#8B4050" }}>
           {remaining >= 0
-            ? `เหลือ ${remaining.toLocaleString()} kcal`
+            ? `${t("tracker.remaining")} ${remaining.toLocaleString()} kcal`
             : `เกิน ${Math.abs(remaining).toLocaleString()} kcal`}
         </span>
       </div>
@@ -255,7 +255,7 @@ function FoodCard({ food, isAdded, currentPhaseKey, onToggle, tokens }) {
         fontFamily:"'DM Sans',sans-serif", cursor:"pointer",
         transition:"all .15s",
       }}>
-        {isAdded ? "✓ เพิ่มแล้ว" : "+ เพิ่ม"}
+        {isAdded ? "✓ " + t("common.add") : "+ " + t("common.add")}
       </button>
     </div>
   )
@@ -321,10 +321,10 @@ export default function Tracker() {
           คำนวณแคลอรี่
         </div>
         <div style={{ fontSize:12, color:tokens.stone }}>
-          เป้าหมาย {user.targetCal?.toLocaleString() ?? 1440} kcal ·{" "}
+          {t("tracker.target")} {user.targetCal?.toLocaleString() ?? 1440} kcal ·{" "}
           <span style={{ color: remaining > 0 ? tokens.sageDk : "#8B4050" }}>
             {remaining > 0
-              ? `เหลือ ${remaining.toLocaleString()} kcal`
+              ? `${t("tracker.remaining")} ${remaining.toLocaleString()} kcal`
               : `เกิน ${Math.abs(remaining).toLocaleString()} kcal`}
           </span>
         </div>
@@ -363,7 +363,7 @@ export default function Tracker() {
             <input
               type="text" value={search}
               onChange={e => handleSearch(e.target.value)}
-              placeholder="ค้นหาอาหาร ไทย / Japanese / Korean..."
+              placeholder={t("tracker.search")}
               style={{
                 width:"100%", padding:"11px 36px",
                 background:tokens.creamSoft, border:`1px solid ${tokens.border}`,
@@ -441,7 +441,7 @@ export default function Tracker() {
           <div style={{ padding:"40px 16px", textAlign:"center",
             color:tokens.stone, fontSize:13 }}>
             <div style={{ fontSize:32, marginBottom:12 }}>🔍</div>
-            ไม่พบอาหารที่ค้นหา
+            {t("tracker.no_items")}
           </div>
         ) : (
           <div style={{
