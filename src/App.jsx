@@ -166,7 +166,7 @@ function PhoneShell({children}){
 
 /* ── Bottom nav ── */
 function BottomNav({current,onChange}){
-  const { t } = useContext(AppContext)
+  const { t } = useApp()
   const NAV_KEYS = ["home","calendar","tracker","mood","weight","profile"]
   const NAV_EMOJIS = { home:"🏠", calendar:"📅", tracker:"🥗", mood:"😊", weight:"📊", profile:"👤" }
   return(
@@ -233,7 +233,12 @@ export default function App(){
 
   /* ── Navigation (session only — intentional) ── */
   const [screen, setScreen] = useState("quiz")
-  const [lang,   setLang  ] = useState("th")
+  const [lang,   setLangState] = useState(() => localStorage.getItem("he_lang") ?? "th")
+
+  function setLang(l) {
+    setLangState(l)
+    localStorage.setItem("he_lang", l)
+  }
 
   /* ── Persistent state ── */
   const [user,          setUser         ] = useLocalStorage(STORAGE_KEYS.user,          DEFAULT_USER)
@@ -382,6 +387,9 @@ export default function App(){
     profile:  <Profile />,
   }
 
+  // render only the active screen, keep others mounted for perf
+  const SCREEN_IDS = ["home","calendar","tracker","mood","weight","profile"]
+
   return(
     <AppContext.Provider value={ctx}>
       <PhoneShell>
@@ -391,7 +399,15 @@ export default function App(){
           ? <Onboarding onStart={()=>navTo("home")} />
           : (
             <>
-              {screens[screen]??<Home/>}
+              {SCREEN_IDS.map(id => (
+                <div key={id} style={{
+                  position:"absolute", inset:0,
+                  visibility: screen===id ? "visible" : "hidden",
+                  pointerEvents: screen===id ? "auto" : "none",
+                }}>
+                  {screens[id]}
+                </div>
+              ))}
               <BottomNav current={screen} onChange={navTo}/>
               <Toast message={toast.msg} visible={toast.visible}/>
             </>
