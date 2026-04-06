@@ -96,13 +96,13 @@ function SlideContent({ slide, tokens }) {
         lineHeight:1.2, textAlign:"center",
         margin:0,
       }}>
-        {slide.title.map((t, i) => (
-          <span key={i} style={{
-            color: i === slide.titleAccent ? tokens.lavenderDk : tokens.cocoa,
-            fontStyle: i === slide.titleAccent ? "italic" : "normal",
-          }}>
-            {t}{i < slide.title.length - 1 ? "\n" : ""}
-          </span>
+        {slide.title.map((titlePart, i) => (
+   <span key={i} style={{
+  color: i === slide.titleAccent ? tokens.lavenderDk : tokens.cocoa,
+  fontStyle: i === slide.titleAccent ? "italic" : "normal",
+}}>
+  {titlePart}{i < slide.title.length - 1 ? "\n" : ""}
+</span>
         ))}
       </h1>
 
