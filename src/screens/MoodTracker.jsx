@@ -378,16 +378,16 @@ export default function MoodTracker() {
         {[
           { id:"log",     label: t("mood.tab_log") },
           { id:"history", label: t("mood.tab_history") },
-        ].map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{
+        ].map(tab => (
+          <button key={tab.id} onClick={() => setTab(tab.id)} style={{
             flex:1, padding:"8px",
             border:`1px solid ${tokens.border}`,
             borderRadius:10,
-            background: tab===t.id ? tokens.cocoa : tokens.cream,
-            color: tab===t.id ? tokens.cream : tokens.stone,
+            background: tab===tab.id ? tokens.cocoa : tokens.cream,
+            color: tab===tab.id ? tokens.cream : tokens.stone,
             fontSize:13, fontWeight:500, cursor:"pointer",
             fontFamily:"'DM Sans',sans-serif",
-          }}>{t.label}</button>
+          }}>{tab.label}</button>
         ))}
       </div>
  
