@@ -526,9 +526,7 @@ function ResultScreen({ hormoneType, scores, onFinish, tokens, lang }) {
    HORMONE QUIZ — main export
 ═══════════════════════════════════════════════════ */
 export default function HormoneQuiz({ onComplete }) {
-  const { tokens } = useApp()
-  const [lang, setLang] = useState("th")
-
+ const { tokens, lang, setLang } = useApp()
   const [step,     setStep    ] = useState("intro") // intro | quiz | result
   const [qIndex,   setQIndex  ] = useState(0)
   const [answers,  setAnswers ] = useState({})       // { qId: optionIndex }
