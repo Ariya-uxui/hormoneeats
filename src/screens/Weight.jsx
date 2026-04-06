@@ -94,7 +94,7 @@ function WeightHero({ weight, goalWeight }) {
    SVG LINE CHART
 ═══════════════════════════════════════════════════ */
 function WeightChart({ history, goalWeight }) {
-  const { tokens } = useApp()
+const { tokens, lang } = useApp()
 
   /* Build chart points from last 6 entries */
   const points = useMemo(() => {
