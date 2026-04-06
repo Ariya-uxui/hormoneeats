@@ -275,7 +275,7 @@ function LogBlock({ history, onLog }) {
   function handleLog() {
     const v = parseFloat(inputVal)
     if (isNaN(v) || v < 20 || v > 300) {
-      setError("lang==="en" ? "Please enter a valid weight (20–300 kg)" : "กรุณากรอกน้ำหนักที่ถูกต้อง (20–300 กก.)"")
+      setError(lang==="en" ? "Please enter a valid weight (20–300 kg)" : "กรุณากรอกน้ำหนักที่ถูกต้อง (20–300 กก.)")
       return
     }
     setError("")
