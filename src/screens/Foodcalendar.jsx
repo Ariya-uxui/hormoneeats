@@ -134,12 +134,12 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
  
         {/* tab switcher */}
         <div style={{display:"flex",padding:"0 16px 8px",flexShrink:0,gap:8}}>
-          {[{id:"db",label:`🍽️ ${t("calendar.food_list")}`},{id:"custom",label:`✏️ ${t("calendar.custom")}`}].map(t=>(
-            <button key={t.id} onClick={()=>setTab(t.id)} style={{
+          {[{id:"db",label:`🍽️ ${t("calendar.food_list")}`},{id:"custom",label:`✏️ ${t("calendar.custom")}`}].map(tab=>(
+            <button key={tab.id} onClick={()=>setTab(t.id)} style={{
               flex:1,padding:"7px",
               border:`1px solid ${tokens.border}`,
               borderRadius:10,
-              background:tab===t.id?tokens.cocoa:tokens.cream,
+              background:tab===tab.id?tokens.cocoa:tokens.cream,
               color:tab===t.id?tokens.cream:tokens.stone,
               fontSize:12,fontWeight:500,cursor:"pointer",
               fontFamily:"'DM Sans',sans-serif",
@@ -420,7 +420,7 @@ function DaySummary({ dateKey, entries, targetCal, tokens }) {
 /* ═══════════════════════════════════════════════════
    FOOD ENTRY LIST
 ═══════════════════════════════════════════════════ */
-function FoodEntryList({ dateKey, entries, onDelete, tokens }) {
+function FoodEntryList({ dateKey, entries, onDelete, tokens }) {const { t } = useApp()
   if(entries.length===0){
     return(
       <div style={{padding:"24px 16px",textAlign:"center",color:tokens.stone,fontSize:13}}>
