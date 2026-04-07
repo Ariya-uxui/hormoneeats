@@ -23,36 +23,36 @@ import { useApp, ScreenWrapper } from "../App.jsx"
 /* ── Suggested foods per phase ── */
 const PHASE_FOODS = {
   follicular: [
-    { emoji: "🥦", name: "บรอกโคลี",  cal: 55  },
-    { emoji: "🐟", name: "ปลาทูน่า",   cal: 145 },
-    { emoji: "🥚", name: "ไข่ต้ม ×2",  cal: 140 },
-    { emoji: "🫘", name: "ถั่วเลนทิล",  cal: 116 },
-    { emoji: "🌿", name: "ผักโขม",     cal: 23  },
-    { emoji: "🌾", name: "ควินัว",     cal: 222 },
+    { emoji: "🥦", name: "บรอกโคลี", nameEn: "Broccoli",  cal: 55  },
+    { emoji: "🐟", name: "ปลาทูน่า", nameEn: "Tuna",   cal: 145 },
+    { emoji: "🥚", name: "ไข่ต้ม ×2", nameEn: "Boiled Eggs ×2",  cal: 140 },
+    { emoji: "🫘", name: "ถั่วเลนทิล", nameEn: "Lentils",  cal: 116 },
+    { emoji: "🌿", name: "ผักโขม", nameEn: "Spinach",     cal: 23  },
+    { emoji: "🌾", name: "ควินัว", nameEn: "Quinoa",     cal: 222 },
   ],
   ovulation: [
-    { emoji: "🥦", name: "บรอกโคลี",    cal: 55  },
-    { emoji: "🐟", name: "ปลาแซลมอน",   cal: 208 },
-    { emoji: "🥚", name: "ไข่ต้ม ×2",   cal: 140 },
-    { emoji: "🥑", name: "อะโวคาโด",    cal: 120 },
-    { emoji: "🫐", name: "บลูเบอรี่",   cal: 57  },
-    { emoji: "🌿", name: "ผักโขม",      cal: 23  },
+    { emoji: "🥦", name: "บรอกโคลี", nameEn: "Broccoli",    cal: 55  },
+    { emoji: "🐟", name: "ปลาแซลมอน", nameEn: "Salmon",   cal: 208 },
+    { emoji: "🥚", name: "ไข่ต้ม ×2", nameEn: "Boiled Eggs ×2",   cal: 140 },
+    { emoji: "🥑", name: "อะโวคาโด", nameEn: "Avocado",    cal: 120 },
+    { emoji: "🫐", name: "บลูเบอรี่", nameEn: "Blueberries",   cal: 57  },
+    { emoji: "🌿", name: "ผักโขม", nameEn: "Spinach",      cal: 23  },
   ],
   luteal: [
-    { emoji: "🍠", name: "มันเทศ",      cal: 130 },
-    { emoji: "🍌", name: "กล้วยหอม",    cal: 90  },
-    { emoji: "🫘", name: "ถั่วดำ",       cal: 114 },
-    { emoji: "🐟", name: "ปลาทอด",      cal: 250 },
-    { emoji: "🥬", name: "ผักคะน้า",    cal: 33  },
-    { emoji: "🍫", name: "ดาร์กช็อก",   cal: 80  },
+    { emoji: "🍠", name: "มันเทศ", nameEn: "Sweet Potato",      cal: 130 },
+    { emoji: "🍌", name: "กล้วยหอม", nameEn: "Banana",    cal: 90  },
+    { emoji: "🫘", name: "ถั่วดำ", nameEn: "Black Beans",       cal: 114 },
+    { emoji: "🐟", name: "ปลาทอด", nameEn: "Fried Fish",      cal: 250 },
+    { emoji: "🥬", name: "ผักคะน้า", nameEn: "Kale",    cal: 33  },
+    { emoji: "🍫", name: "ดาร์กช็อก", nameEn: "Dark Chocolate",   cal: 80  },
   ],
   menstrual: [
-    { emoji: "🥩", name: "เนื้อแดง",     cal: 215 },
-    { emoji: "🌿", name: "ผักโขม",       cal: 23  },
-    { emoji: "🫚", name: "ขิงต้มน้ำผึ้ง", cal: 45  },
-    { emoji: "🫘", name: "ถั่วเขียว",    cal: 100 },
-    { emoji: "🥚", name: "ไข่ต้ม ×2",    cal: 140 },
-    { emoji: "🍖", name: "ตับไก่",        cal: 167 },
+    { emoji: "🥩", name: "เนื้อแดง", nameEn: "Lean Beef",     cal: 215 },
+    { emoji: "🌿", name: "ผักโขม", nameEn: "Spinach",       cal: 23  },
+    { emoji: "🫚", name: "ขิงต้มน้ำผึ้ง", nameEn: "Ginger Honey Tea", cal: 45  },
+    { emoji: "🫘", name: "ถั่วเขียว", nameEn: "Mung Beans",    cal: 100 },
+    { emoji: "🥚", name: "ไข่ต้ม ×2", nameEn: "Boiled Eggs ×2",    cal: 140 },
+    { emoji: "🍖", name: "ตับไก่", nameEn: "Chicken Liver",        cal: 167 },
   ],
 }
  
@@ -60,40 +60,40 @@ const PHASE_FOODS = {
 /* ── 7-Day Meal Plan per hormone type ── */
 const MEAL_PLANS_HOME = {
   estrogen_dominant: [
-    { day:"จันทร์",  b:"โอ๊ตมีล + เมล็ดแฟลกซ์ + เบอรี่",      l:"ปลาแซลมอนอบ + ข้าวกล้อง + บรอกโคลี",  d:"ต้มยำเต้าหู้ + ผักโขมผัด" },
-    { day:"อังคาร",  b:"ไข่ต้ม 2 ฟอง + ขนมปังไรย์",            l:"สลัดผักโขม + วอลนัท",                   d:"ไก่อบสมุนไพร + มันเทศ" },
-    { day:"พุธ",     b:"สมูทตี้ผักโขม + กล้วย",                 l:"ควินัวโบล์ + ผักรวม + เต้าหู้",         d:"แกงส้มผักรวม + ข้าวกล้อง" },
-    { day:"พฤหัส",  b:"กรีกโยเกิร์ต + เมล็ดแฟลกซ์",            l:"ปลาทูน่า + สลัดผัก",                    d:"ผัดผักคะน้า + เนื้อแดง" },
-    { day:"ศุกร์",   b:"ข้าวโอ๊ต + บลูเบอรี่ + อัลมอนด์",       l:"ซุปผักรวม + ข้าวกล้อง",                 d:"ปลาแซลมอนย่าง + บรอกโคลี" },
-    { day:"เสาร์",  b:"แพนเค้กกล้วยไข่ + เบอรี่รวม",            l:"บิบิมบับ",                               d:"ต้มข่าไก่ + ข้าวกล้อง" },
-    { day:"อาทิตย์",b:"อะโวคาโดโทสต์ + ไข่ลวก",                l:"ส้มตำ + ไก่ย่าง",                       d:"มิโซะซุป + ปลาแซลมอน" },
+    { day:"จันทร์", dayEn:"Mon",  b:"โอ๊ตมีล + เมล็ดแฟลกซ์ + เบอรี่", bEn:"Oatmeal + Flaxseeds + Berries",      l:"ปลาแซลมอนอบ + ข้าวกล้อง + บรอกโคลี", lEn:"Baked Salmon + Brown Rice + Broccoli",  d:"ต้มยำเต้าหู้ + ผักโขมผัด", dEn:"Tofu Tom Yum + Stir-fried Spinach" },
+    { day:"อังคาร", dayEn:"Tue",  b:"ไข่ต้ม 2 ฟอง + ขนมปังไรย์", bEn:"Boiled Eggs + Rye Bread",            l:"สลัดผักโขม + วอลนัท", lEn:"Spinach Salad + Walnuts",                   d:"ไก่อบสมุนไพร + มันเทศ", dEn:"Herb Roasted Chicken + Sweet Potato" },
+    { day:"พุธ", dayEn:"Wed",     b:"สมูทตี้ผักโขม + กล้วย", bEn:"Spinach Smoothie + Banana",                 l:"ควินัวโบล์ + ผักรวม + เต้าหู้", lEn:"Quinoa Bowl + Mixed Veg + Tofu",         d:"แกงส้มผักรวม + ข้าวกล้อง", dEn:"Sour Curry + Brown Rice" },
+    { day:"พฤหัส", dayEn:"Thu",  b:"กรีกโยเกิร์ต + เมล็ดแฟลกซ์", bEn:"Greek Yogurt + Flaxseeds",            l:"ปลาทูน่า + สลัดผัก", lEn:"Tuna + Green Salad",                    d:"ผัดผักคะน้า + เนื้อแดง", dEn:"Stir-fried Kale + Lean Beef" },
+    { day:"ศุกร์", dayEn:"Fri",   b:"ข้าวโอ๊ต + บลูเบอรี่ + อัลมอนด์", bEn:"Oatmeal + Blueberries + Almonds",       l:"ซุปผักรวม + ข้าวกล้อง", lEn:"Mixed Veg Soup + Brown Rice",                 d:"ปลาแซลมอนย่าง + บรอกโคลี", dEn:"Grilled Salmon + Broccoli" },
+    { day:"เสาร์", dayEn:"Sat",  b:"แพนเค้กกล้วยไข่ + เบอรี่รวม", bEn:"Banana Egg Pancake + Mixed Berries",            l:"บิบิมบับ", lEn:"Bibimbap",                               d:"ต้มข่าไก่ + ข้าวกล้อง", dEn:"Tom Kha Gai + Brown Rice" },
+    { day:"อาทิตย์", dayEn:"Sun",b:"อะโวคาโดโทสต์ + ไข่ลวก", bEn:"Avocado Toast + Poached Egg",                l:"ส้มตำ + ไก่ย่าง", lEn:"Papaya Salad + Grilled Chicken",                       d:"มิโซะซุป + ปลาแซลมอน", dEn:"Miso Soup + Salmon" },
   ],
   progesterone_low: [
-    { day:"จันทร์",  b:"กล้วยหอม + เนยอัลมอนด์ + ชาคาโมมายล์", l:"ไก่อบ + มันเทศ + ผักโขม",              d:"ต้มยำกุ้ง + ข้าวกล้อง" },
-    { day:"อังคาร",  b:"โอ๊ตมีล + กล้วย + ดาร์กช็อก",            l:"ถั่วดำ + ข้าวกล้อง + ผักสด",           d:"แกงเขียวหวาน + ข้าวกล้อง" },
-    { day:"พุธ",     b:"ไข่ต้ม + ขนมปังโฮลวีท + ชาขิง",          l:"ปลาทอด + ผัดผักรวม",                   d:"ซุนดูบูจิเก + ข้าว" },
-    { day:"พฤหัส",  b:"กรีกโยเกิร์ต + กล้วย + วอลนัท",           l:"สลัดอะโวคาโด + ปลาทูน่า",              d:"ผัดกะเพราไก่ + ข้าวกล้อง" },
-    { day:"ศุกร์",   b:"สมูทตี้กล้วย + นมโอ๊ต",                  l:"ข้าวหน้าปลาแซลมอน + สลัด",             d:"ต้มข่าไก่ + ข้าวกล้อง" },
-    { day:"เสาร์",  b:"ข้าวโอ๊ต + เมล็ดแฟลกซ์",                  l:"ซัมเกทัง",                              d:"ผักโขมผัดกระเทียม + ไข่" },
-    { day:"อาทิตย์",b:"แพนเค้กกล้วยไข่ + ดาร์กช็อก",             l:"ก๋วยเตี๋ยวน้ำใส + ผักโขม",             d:"ปลาแซลมอนย่าง + มันเทศ" },
+    { day:"จันทร์", dayEn:"Mon",  b:"กล้วยหอม + เนยอัลมอนด์ + ชาคาโมมายล์", bEn:"Banana + Almond Butter + Chamomile Tea", l:"ไก่อบ + มันเทศ + ผักโขม", lEn:"Roasted Chicken + Sweet Potato + Spinach",              d:"ต้มยำกุ้ง + ข้าวกล้อง", dEn:"Tom Yum Goong + Brown Rice" },
+    { day:"อังคาร", dayEn:"Tue",  b:"โอ๊ตมีล + กล้วย + ดาร์กช็อก", bEn:"Oatmeal + Banana + Dark Chocolate",            l:"ถั่วดำ + ข้าวกล้อง + ผักสด", lEn:"Black Beans + Brown Rice + Fresh Veg",           d:"แกงเขียวหวาน + ข้าวกล้อง", dEn:"Green Curry + Brown Rice" },
+    { day:"พุธ", dayEn:"Wed",     b:"ไข่ต้ม + ขนมปังโฮลวีท + ชาขิง", bEn:"Boiled Eggs + Whole Wheat Bread + Ginger Tea",          l:"ปลาทอด + ผัดผักรวม", lEn:"Fried Fish + Stir-fried Veg",                   d:"ซุนดูบูจิเก + ข้าว", dEn:"Sundubu Jjigae + Rice" },
+    { day:"พฤหัส", dayEn:"Thu",  b:"กรีกโยเกิร์ต + กล้วย + วอลนัท", bEn:"Greek Yogurt + Banana + Walnuts",           l:"สลัดอะโวคาโด + ปลาทูน่า", lEn:"Avocado Salad + Tuna",              d:"ผัดกะเพราไก่ + ข้าวกล้อง", dEn:"Basil Chicken + Brown Rice" },
+    { day:"ศุกร์", dayEn:"Fri",   b:"สมูทตี้กล้วย + นมโอ๊ต", bEn:"Banana Smoothie + Oat Milk",                  l:"ข้าวหน้าปลาแซลมอน + สลัด", lEn:"Salmon Rice Bowl + Salad",             d:"ต้มข่าไก่ + ข้าวกล้อง", dEn:"Tom Kha Gai + Brown Rice" },
+    { day:"เสาร์", dayEn:"Sat",  b:"ข้าวโอ๊ต + เมล็ดแฟลกซ์", bEn:"Oatmeal + Flaxseeds",                  l:"ซัมเกทัง", lEn:"Samgyetang",                              d:"ผักโขมผัดกระเทียม + ไข่", dEn:"Garlic Spinach + Egg" },
+    { day:"อาทิตย์", dayEn:"Sun",b:"แพนเค้กกล้วยไข่ + ดาร์กช็อก", bEn:"Banana Egg Pancake + Dark Chocolate",             l:"ก๋วยเตี๋ยวน้ำใส + ผักโขม", lEn:"Clear Noodle Soup + Spinach",             d:"ปลาแซลมอนย่าง + มันเทศ", dEn:"Grilled Salmon + Sweet Potato" },
   ],
   cortisol_high: [
-    { day:"จันทร์",  b:"ชาขมิ้น + โอ๊ตมีล + วอลนัท",             l:"สลัดผักโขม + อะโวคาโด + แซลมอน",      d:"ซุปผักรวม + ข้าวกล้อง" },
-    { day:"อังคาร",  b:"สมูทตี้อะโวคาโด + ชา Ashwagandha",        l:"ไก่อบสมุนไพร + บรอกโคลีนึ่ง",        d:"มิโซะซุป + เต้าหู้เย็น" },
-    { day:"พุธ",     b:"ไข่ต้ม + ขนมปังไรย์ + ชา Chamomile",      l:"ควินัวโบล์ + ถั่วดำ",                  d:"ต้มยำเต้าหู้" },
-    { day:"พฤหัส",  b:"กรีกโยเกิร์ต + บลูเบอรี่ + วอลนัท",       l:"ปลาแซลมอนอบ + มันเทศ",                d:"ผัดผักคะน้า + ไก่" },
-    { day:"ศุกร์",   b:"โอ๊ตมีล + กล้วย + ชาขิง",                 l:"ส้มตำ (ไม่เผ็ดมาก) + ข้าวกล้อง",      d:"แกงจืดเต้าหู้ + ข้าวกล้อง" },
-    { day:"เสาร์",  b:"อะโวคาโดโทสต์ + ชา Ashwagandha",           l:"ชาบู-ชาบู ผักเยอะ",                   d:"ต้มข่าไก่" },
-    { day:"อาทิตย์",b:"สมูทตี้มะม่วง + ขมิ้น",                    l:"ข้าวกล้อง + ไก่ย่าง + ผักโขม",        d:"ซุปผักรวม + ขนมปังโฮลวีท" },
+    { day:"จันทร์", dayEn:"Mon",  b:"ชาขมิ้น + โอ๊ตมีล + วอลนัท", bEn:"Turmeric Tea + Oatmeal + Walnuts",             l:"สลัดผักโขม + อะโวคาโด + แซลมอน", lEn:"Spinach Salad + Avocado + Salmon",      d:"ซุปผักรวม + ข้าวกล้อง", dEn:"Mixed Veg Soup + Brown Rice" },
+    { day:"อังคาร", dayEn:"Tue",  b:"สมูทตี้อะโวคาโด + ชา Ashwagandha", bEn:"Avocado Smoothie + Ashwagandha Tea",        l:"ไก่อบสมุนไพร + บรอกโคลีนึ่ง", lEn:"Herb Chicken + Steamed Broccoli",        d:"มิโซะซุป + เต้าหู้เย็น", dEn:"Miso Soup + Cold Tofu" },
+    { day:"พุธ", dayEn:"Wed",     b:"ไข่ต้ม + ขนมปังไรย์ + ชา Chamomile", bEn:"Boiled Eggs + Rye Bread + Chamomile Tea",      l:"ควินัวโบล์ + ถั่วดำ", lEn:"Quinoa Bowl + Black Beans",                  d:"ต้มยำเต้าหู้", dEn:"Tofu Tom Yum" },
+    { day:"พฤหัส", dayEn:"Thu",  b:"กรีกโยเกิร์ต + บลูเบอรี่ + วอลนัท", bEn:"Greek Yogurt + Blueberries + Walnuts",       l:"ปลาแซลมอนอบ + มันเทศ", lEn:"Baked Salmon + Sweet Potato",                d:"ผัดผักคะน้า + ไก่", dEn:"Stir-fried Kale + Chicken" },
+    { day:"ศุกร์", dayEn:"Fri",   b:"โอ๊ตมีล + กล้วย + ชาขิง", bEn:"Oatmeal + Banana + Ginger Tea",                 l:"ส้มตำ (ไม่เผ็ดมาก) + ข้าวกล้อง", lEn:"Mild Papaya Salad + Brown Rice",      d:"แกงจืดเต้าหู้ + ข้าวกล้อง", dEn:"Clear Tofu Soup + Brown Rice" },
+    { day:"เสาร์", dayEn:"Sat",  b:"อะโวคาโดโทสต์ + ชา Ashwagandha", bEn:"Avocado Toast + Ashwagandha Tea",           l:"ชาบู-ชาบู ผักเยอะ", lEn:"Shabu-Shabu with Lots of Veg",                   d:"ต้มข่าไก่", dEn:"Tom Kha Gai" },
+    { day:"อาทิตย์", dayEn:"Sun",b:"สมูทตี้มะม่วง + ขมิ้น", bEn:"Mango Smoothie + Turmeric",                    l:"ข้าวกล้อง + ไก่ย่าง + ผักโขม", lEn:"Brown Rice + Grilled Chicken + Spinach",        d:"ซุปผักรวม + ขนมปังโฮลวีท", dEn:"Mixed Veg Soup + Whole Wheat Bread" },
   ],
   balanced: [
-    { day:"จันทร์",  b:"โอ๊ตมีล + เบอรี่ + เมล็ดแฟลกซ์",         l:"ปลาแซลมอน + ข้าวกล้อง + ผัก",        d:"ต้มยำกุ้ง + ข้าวกล้อง" },
-    { day:"อังคาร",  b:"ไข่ต้ม + ขนมปังโฮลวีท + อะโวคาโด",       l:"บิบิมบับ + เต้าหู้",                   d:"ไก่อบสมุนไพร + มันเทศ" },
-    { day:"พุธ",     b:"กรีกโยเกิร์ต + กล้วย + วอลนัท",           l:"สลัดผักโขม + ปลาทูน่า",               d:"แกงเขียวหวาน + ข้าวกล้อง" },
-    { day:"พฤหัส",  b:"สมูทตี้เบอรี่ + นมอัลมอนด์",               l:"ซูชิ (8 ชิ้น) + มิโซะซุป",            d:"ผัดผักรวม + ไก่" },
-    { day:"ศุกร์",   b:"ข้าวโอ๊ต + บลูเบอรี่ + อัลมอนด์",         l:"ก๋วยเตี๋ยวน้ำใส + ผักโขม",            d:"ปลาแซลมอนย่าง + บรอกโคลี" },
-    { day:"เสาร์",  b:"แพนเค้กกล้วยไข่ + สตรอว์เบอรี่",           l:"ส้มตำ + ไก่ย่าง + ข้าวกล้อง",        d:"ชาบู-ชาบู ผักเยอะ" },
-    { day:"อาทิตย์",b:"อะโวคาโดโทสต์ + ไข่ลวก",                  l:"ควินัวโบล์ + ถั่วดำ",                  d:"ต้มข่าไก่ + ข้าวกล้อง" },
+    { day:"จันทร์", dayEn:"Mon",  b:"โอ๊ตมีล + เบอรี่ + เมล็ดแฟลกซ์", bEn:"โอ๊ตมีล + เบอรี่ + เมล็ดแฟลกซ์",         l:"ปลาแซลมอน + ข้าวกล้อง + ผัก", lEn:"Salmon + Brown Rice + Veg",        d:"ต้มยำกุ้ง + ข้าวกล้อง", dEn:"Tom Yum Goong + Brown Rice" },
+    { day:"อังคาร", dayEn:"Tue",  b:"ไข่ต้ม + ขนมปังโฮลวีท + อะโวคาโด", bEn:"Boiled Eggs + Whole Wheat Bread + Avocado",       l:"บิบิมบับ + เต้าหู้", lEn:"Bibimbap + Tofu",                   d:"ไก่อบสมุนไพร + มันเทศ", dEn:"Herb Roasted Chicken + Sweet Potato" },
+    { day:"พุธ", dayEn:"Wed",     b:"กรีกโยเกิร์ต + กล้วย + วอลนัท", bEn:"Greek Yogurt + Banana + Walnuts",           l:"สลัดผักโขม + ปลาทูน่า", lEn:"Spinach Salad + Tuna",               d:"แกงเขียวหวาน + ข้าวกล้อง", dEn:"Green Curry + Brown Rice" },
+    { day:"พฤหัส", dayEn:"Thu",  b:"สมูทตี้เบอรี่ + นมอัลมอนด์", bEn:"Berry Smoothie + Almond Milk",               l:"ซูชิ (8 ชิ้น) + มิโซะซุป", lEn:"Sushi (8 pcs) + Miso Soup",            d:"ผัดผักรวม + ไก่", dEn:"Stir-fried Mixed Veg + Chicken" },
+    { day:"ศุกร์", dayEn:"Fri",   b:"ข้าวโอ๊ต + บลูเบอรี่ + อัลมอนด์", bEn:"Oatmeal + Blueberries + Almonds",         l:"ก๋วยเตี๋ยวน้ำใส + ผักโขม", lEn:"Clear Noodle Soup + Spinach",            d:"ปลาแซลมอนย่าง + บรอกโคลี", dEn:"Grilled Salmon + Broccoli" },
+    { day:"เสาร์", dayEn:"Sat",  b:"แพนเค้กกล้วยไข่ + สตรอว์เบอรี่", bEn:"Banana Egg Pancake + Strawberries",           l:"ส้มตำ + ไก่ย่าง + ข้าวกล้อง", lEn:"Papaya Salad + Grilled Chicken + Brown Rice",        d:"ชาบู-ชาบู ผักเยอะ", dEn:"Shabu-Shabu with Lots of Veg" },
+    { day:"อาทิตย์", dayEn:"Sun",b:"อะโวคาโดโทสต์ + ไข่ลวก", bEn:"Avocado Toast + Poached Egg",                  l:"ควินัวโบล์ + ถั่วดำ", lEn:"Quinoa Bowl + Black Beans",                  d:"ต้มข่าไก่ + ข้าวกล้อง", dEn:"Tom Kha Gai + Brown Rice" },
   ],
 }
  
@@ -329,7 +329,7 @@ function SectionRow({ title, action, onAction }) {
  
 /* FoodRail */
 function FoodRail({ foods, pickedNames, onPick }) {
-  const { tokens } = useApp()
+  const { tokens, lang } = useApp()
   return (
     <div className="fade-up" style={{
       display: "flex", gap: 8,
@@ -358,7 +358,7 @@ function FoodRail({ foods, pickedNames, onPick }) {
             onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}
           >
             <div style={{ fontSize: 24, marginBottom: 5 }}>{f.emoji}</div>
-            <div style={{ fontSize: 11, fontWeight: 500, color: tokens.cocoa }}>{f.name}</div>
+            <div style={{ fontSize: 11, fontWeight: 500, color: tokens.cocoa }}>{lang==="en" ? (f.nameEn??f.name) : f.name}</div>
             <div style={{ fontSize: 10, color: tokens.sage, marginTop: 2 }}>{f.cal} kcal</div>
           </div>
         )
@@ -497,9 +497,9 @@ function TodayMealCard({ hormoneType }) {
       </div>
       <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
         {[
-          { icon:"🌅", label:t("home.breakfast"), val:meal.b },
-          { icon:"☀️", label:t("home.lunch"),     val:meal.l },
-          { icon:"🌙", label:t("home.dinner"),     val:meal.d },
+          { icon:"🌅", label:t("home.breakfast"), val:lang==="en" ? (meal.bEn??meal.b) : meal.b },
+          { icon:"☀️", label:t("home.lunch"),     val:lang==="en" ? (meal.lEn??meal.l) : meal.l },
+          { icon:"🌙", label:t("home.dinner"),     val:lang==="en" ? (meal.dEn??meal.d) : meal.d },
         ].map(m => (
           <div key={m.label} style={{
             display:"flex", gap:10, alignItems:"flex-start",
