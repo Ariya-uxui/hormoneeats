@@ -421,7 +421,8 @@ function DaySummary({ dateKey, entries, targetCal, tokens }) {
 /* ═══════════════════════════════════════════════════
    FOOD ENTRY LIST
 ═══════════════════════════════════════════════════ */
-function FoodEntryList({ dateKey, entries, onDelete, tokens }) {const { t } = useApp()
+function FoodEntryList({ dateKey, entries, onDelete, tokens }) {
+  const { t, lang } = useApp()
   if(entries.length===0){
     return(
       <div style={{padding:"24px 16px",textAlign:"center",color:tokens.stone,fontSize:13}}>
