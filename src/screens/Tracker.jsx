@@ -177,8 +177,8 @@ function TodayLog({ entries, onDelete, totalCal, targetCal, tokens }) {
  
 /* ── Food Card ── */
 function FoodCard({ food, isAdded, currentPhaseKey, onToggle, tokens }) {
-  const { t } = useApp()
-  const tag        = HORMONE_TAGS[food.hormoneTag] ?? HORMONE_TAGS.neutral
+const { t, lang } = useApp()
+ const tag        = HORMONE_TAGS[food.hormoneTag] ?? HORMONE_TAGS.neutral
   const isPhaseHit = food.phase?.includes(currentPhaseKey)
   const cuisineFlag = { thai:"🇹🇭", japanese:"🇯🇵", korean:"🇰🇷", western:"🌍" }
  
