@@ -123,7 +123,7 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
         <div style={{display:"flex",gap:6,padding:"8px 16px",overflowX:"auto",flexShrink:0,
           msOverflowStyle:"none",scrollbarWidth:"none"}}>
           {MEAL_SLOTS.map(s=>(
-            <button key={tab.id} onClick={()=>setActiveTab(tab.id)} style={{
+            <button key={tab.id} onClick={()=>setMeal(s)} style={{
                flexShrink:0,padding:"5px 12px",
               border:`1px solid ${meal===s?tokens.ovulation:tokens.border}`,borderRadius:999,
               fontSize:11,fontWeight:500,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",
