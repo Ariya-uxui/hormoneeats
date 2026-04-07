@@ -247,7 +247,7 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
           )}
         </div>
  
-        {activeactiveTab==="custom" && (
+        {activeTab==="custom" && (
           <div style={{
             padding:"10px 16px 16px",
             borderTop:`1px solid ${tokens.borderLt}`,
