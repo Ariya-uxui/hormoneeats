@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useApp } from "../App"
-
+ 
 /* ═══════════════════════════════════════════════════
    ONBOARDING SCREEN
    3 slides:
@@ -8,8 +8,8 @@ import { useApp } from "../App"
    Slide 2 — Phase cycle overview
    Slide 3 — Personalized profile intro
 ═══════════════════════════════════════════════════ */
-
-const SLIDES = [
+ 
+const SLIDES_TH = [
   {
     emoji:    "🌿",
     ringBg:   "#EDE8F5",
@@ -43,7 +43,42 @@ const SLIDES = [
     ],
   },
 ]
-
+ 
+ 
+const SLIDES_EN = [
+  {
+    emoji:    "🌿",
+    ringBg:   "#EDE8F5",
+    title:    ["Eat with your", "Hormones"],
+    titleAccent: 1,
+    desc:     "Your body has its own rhythm. Learn to eat in sync — for sustainable weight balance and health from within.",
+  },
+  {
+    emoji:    "🌸",
+    ringBg:   "#F5EAF0",
+    title:    ["4 Hormone", "Phases"],
+    titleAccent: 0,
+    desc:     "Follicular · Ovulation · Luteal · Menstrual — each phase needs different nutrition. The app guides you.",
+    phases: [
+      { emoji:"🌱", label:"Follicular", color:"#A8C4A0" },
+      { emoji:"✨", label:"Ovulation",  color:"#C4899A" },
+      { emoji:"🍂", label:"Luteal",     color:"#C4A882" },
+      { emoji:"🌙", label:"Menstrual",  color:"#9EB0C4" },
+    ],
+  },
+  {
+    emoji:    "✨",
+    ringBg:   "#EAF0EA",
+    title:    ["Personalized", "Just for You"],
+    titleAccent: 1,
+    desc:     "Calculated from your BMI, TDEE, and hormone phase. Real food plans — no supplements needed.",
+    stats: [
+      { val:"1,440", lbl:"kcal target"   },
+      { val:"168",   lbl:"cm height"     },
+      { val:"BMI",   lbl:"19.1 · Normal" },
+    ],
+  },
+]
 /* ═══════════════════════════════════════════════════
    FLOATING RING ART
 ═══════════════════════════════════════════════════ */
@@ -76,7 +111,7 @@ function FloatingRing({ emoji, bg }) {
     </div>
   )
 }
-
+ 
 /* ═══════════════════════════════════════════════════
    SLIDE CONTENT
 ═══════════════════════════════════════════════════ */
@@ -88,7 +123,7 @@ function SlideContent({ slide, tokens }) {
       flex:1, paddingTop:12,
     }}>
       <FloatingRing emoji={slide.emoji} bg={slide.ringBg} />
-
+ 
       {/* Title */}
       <h1 style={{
         fontFamily:"'Playfair Display', serif",
@@ -105,7 +140,7 @@ function SlideContent({ slide, tokens }) {
 </span>
         ))}
       </h1>
-
+ 
       {/* Description */}
       <p style={{
         fontSize:14, color:tokens.stone,
@@ -114,7 +149,7 @@ function SlideContent({ slide, tokens }) {
       }}>
         {slide.desc}
       </p>
-
+ 
       {/* Slide 2 — phase pills */}
       {slide.phases && (
         <div style={{ display:"flex", gap:8, flexWrap:"wrap", justifyContent:"center" }}>
@@ -134,7 +169,7 @@ function SlideContent({ slide, tokens }) {
           ))}
         </div>
       )}
-
+ 
       {/* Slide 3 — stat pills */}
       {slide.stats && (
         <div style={{ display:"flex", gap:8 }}>
@@ -155,26 +190,27 @@ function SlideContent({ slide, tokens }) {
     </div>
   )
 }
-
+ 
 /* ═══════════════════════════════════════════════════
    ONBOARDING SCREEN — main export
 ═══════════════════════════════════════════════════ */
 export default function Onboarding({ onStart }) {
-  const { tokens } = useApp()
+  const { tokens, lang } = useApp()
   const [current, setCurrent] = useState(0)
+  const SLIDES = lang === "en" ? SLIDES_EN : SLIDES_TH
   const isLast = current === SLIDES.length - 1
-
+ 
   function handleNext() {
     if (isLast) onStart()
     else setCurrent(c => c + 1)
   }
-
+ 
   function handleSkip() {
     onStart()
   }
-
+ 
   const slide = SLIDES[current]
-
+ 
   return (
     <div style={{
       position:"absolute", inset:0,
@@ -192,13 +228,13 @@ export default function Onboarding({ onStart }) {
         }}
           onClick={handleSkip}
         >
-          ข้าม
+          {lang === "en" ? "Skip" : "ข้าม"}
         </div>
       )}
-
+ 
       {/* Slide */}
       <SlideContent key={current} slide={slide} tokens={tokens} />
-
+ 
       {/* Footer */}
       <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
         {/* Dots */}
@@ -218,7 +254,7 @@ export default function Onboarding({ onStart }) {
             />
           ))}
         </div>
-
+ 
         {/* Primary CTA */}
         <button
           onClick={handleNext}
@@ -235,9 +271,9 @@ export default function Onboarding({ onStart }) {
           onMouseDown={e => e.currentTarget.style.transform = "scale(.98)"}
           onMouseUp={e   => e.currentTarget.style.transform = "scale(1)"}
         >
-          {isLast ? "เริ่มใช้งานเลย →" : "ถัดไป →"}
+          {isLast ? (lang==="en" ? "Get Started →" : "เริ่มใช้งานเลย →") : (lang==="en" ? "Next →" : "ถัดไป →")}
         </button>
-
+ 
         {/* Secondary */}
         {current === 0 && (
           <button
@@ -255,7 +291,7 @@ export default function Onboarding({ onStart }) {
             onMouseOver={e => e.currentTarget.style.borderColor = tokens.lavender}
             onMouseOut={e  => e.currentTarget.style.borderColor = tokens.border}
           >
-            ฉันมีบัญชีอยู่แล้ว
+            {lang === "en" ? "I already have an account" : "ฉันมีบัญชีอยู่แล้ว"}
           </button>
         )}
       </div>
