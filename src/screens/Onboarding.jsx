@@ -79,6 +79,7 @@ const SLIDES_EN = [
     ],
   },
 ]
+ 
 /* ═══════════════════════════════════════════════════
    FLOATING RING ART
 ═══════════════════════════════════════════════════ */
@@ -195,7 +196,7 @@ function SlideContent({ slide, tokens }) {
    ONBOARDING SCREEN — main export
 ═══════════════════════════════════════════════════ */
 export default function Onboarding({ onStart }) {
-  const { tokens, lang } = useApp()
+  const { tokens, lang, setLang } = useApp()
   const [current, setCurrent] = useState(0)
   const SLIDES = lang === "en" ? SLIDES_EN : SLIDES_TH
   const isLast = current === SLIDES.length - 1
@@ -219,6 +220,29 @@ export default function Onboarding({ onStart }) {
       padding:"52px 30px 44px",
       overflow:"hidden",
     }}>
+      {/* Lang Toggle */}
+      <div style={{
+        position:"absolute", top:60, left:24,
+        display:"flex", gap:0,
+        background:"rgba(255,255,255,.6)",
+        border:"1px solid rgba(187,168,196,.4)",
+        borderRadius:999, overflow:"hidden",
+        zIndex:10,
+      }}>
+        {["th","en"].map(l => (
+          <button key={l} onClick={() => setLang(l)} style={{
+            padding:"5px 12px",
+            background: lang===l ? tokens.cocoa : "transparent",
+            color: lang===l ? tokens.cream : tokens.stone,
+            border:"none", fontSize:11, fontWeight:500,
+            cursor:"pointer", fontFamily:"'DM Sans',sans-serif",
+            transition:"all .2s",
+          }}>
+            {l==="th" ? "🇹🇭 TH" : "🇬🇧 EN"}
+          </button>
+        ))}
+      </div>
+ 
       {/* Skip */}
       {!isLast && (
         <div style={{
