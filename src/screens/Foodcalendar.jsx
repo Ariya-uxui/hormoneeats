@@ -150,7 +150,7 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
  
         {/* content */}
         <div style={{flex:1,overflow:"auto",padding:"0 16px 80px"}}>
-          {tab==="db" ? (
+          {activeTab==="db" ? (
             <>
               {/* search */}
               <div style={{position:"relative",marginBottom:8}}>
@@ -247,7 +247,7 @@ function AddFoodModal({ dateKey, onAdd, onClose, tokens }) {
           )}
         </div>
  
-        {tab==="custom" && (
+        {activeactiveTab==="custom" && (
           <div style={{
             padding:"10px 16px 16px",
             borderTop:`1px solid ${tokens.borderLt}`,
