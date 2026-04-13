@@ -76,34 +76,30 @@ export const NAV_ITEMS = [
 /* ── PHASES ── */
 export const PHASES = {
   follicular:{
-    key:"follicular",label:"Follicular",emoji:"🌱",days:"วัน 1–13",daysEn:"Day 1–13",sub:"หลังประจำเดือน",subEn:"Post-period",
-    color:tokens.follicular,colorLt:tokens.follicularLt,textClr:tokens.sageDk,badge:"พลังสูง",badgeEn:"High Energy",
+    key:"follicular",label:"Follicular",emoji:"🌱",days:"วัน 1–13",sub:"หลังประจำเดือน",
+    color:tokens.follicular,colorLt:tokens.follicularLt,textClr:tokens.sageDk,badge:"พลังสูง",
     desc:"Estrogen ค่อยๆ สูงขึ้น ร่างกายไวต่อ Insulin เผาผลาญดี ออกกำลังกายหนักได้ดีที่สุด",
-    descEn:"Estrogen rises gradually. Your body is insulin-sensitive, metabolism is great — best phase for intense workouts.",
     eat:["ปลาทูน่า","ไข่","ควินัว","ถั่วเลนทิล","ผักใบเขียว","บรอกโคลี"],
     avoid:["น้ำตาลทราย","แป้งขาว","แอลกอฮอล์"],calRange:"1,400–1,500",
   },
   ovulation:{
-    key:"ovulation",label:"Ovulation",emoji:"✨",days:"วัน 14–16",daysEn:"Day 14–16",sub:"",subEn:"",
-    color:tokens.ovulation,colorLt:tokens.ovulationLt,textClr:"#8B4050",badge:"เผาผลาญสูง",badgeEn:"Peak Burn",
+    key:"ovulation",label:"Ovulation",emoji:"✨",days:"วัน 14–16",sub:"",
+    color:tokens.ovulation,colorLt:tokens.ovulationLt,textClr:"#8B4050",badge:"เผาผลาญสูง",
     desc:"Estrogen สูงสุด + LH surge ร่างกายเผาผลาญดีที่สุดในรอบ พลังงานสูง เหมาะลดน้ำหนักมากที่สุด",
-    descEn:"Peak Estrogen + LH surge. Your body burns the most calories this cycle — high energy, ideal for weight loss.",
     eat:["อกไก่","บรอกโคลี","อะโวคาโด","เมล็ดแฟลกซ์","เบอรี่"],
     avoid:["ของทอด","นมวัวมาก","น้ำตาลสูง"],calRange:"1,400–1,450",
   },
   luteal:{
-    key:"luteal",label:"Luteal",emoji:"🍂",days:"วัน 17–28",daysEn:"Day 17–28",sub:"ก่อนประจำเดือน",subEn:"Pre-period",
-    color:tokens.luteal,colorLt:tokens.lutealLt,textClr:"#7A4A28",badge:"ระวังหวาน",badgeEn:"Watch Sugar",
+    key:"luteal",label:"Luteal",emoji:"🍂",days:"วัน 17–28",sub:"ก่อนประจำเดือน",
+    color:tokens.luteal,colorLt:tokens.lutealLt,textClr:"#7A4A28",badge:"ระวังหวาน",
     desc:"Progesterone สูง หิวบ่อย อยากของหวาน น้ำหนักอาจขึ้น 1–2 กก. ชั่วคราวจากน้ำในร่างกาย",
-    descEn:"High Progesterone causes cravings and hunger. Weight may rise 1–2 kg temporarily from water retention.",
     eat:["มันเทศ","กล้วย","ถั่วดำ","ดาร์กช็อก","ปลา"],
     avoid:["เกลือสูง","คาเฟอีนมาก","แอลกอฮอล์"],calRange:"1,500–1,550",
   },
   menstrual:{
-    key:"menstrual",label:"Menstrual",emoji:"🌙",days:"วัน 1–5",daysEn:"Day 1–5",sub:"ช่วงประจำเดือน",subEn:"Period",
-    color:tokens.menstrual,colorLt:tokens.menstrualLt,textClr:"#3A5070",badge:"พักฟื้นฟู",badgeEn:"Rest & Restore",
+    key:"menstrual",label:"Menstrual",emoji:"🌙",days:"วัน 1–5",sub:"ช่วงประจำเดือน",
+    color:tokens.menstrual,colorLt:tokens.menstrualLt,textClr:"#3A5070",badge:"พักฟื้นฟู",
     desc:"ฮอร์โมนทุกตัวอยู่ระดับต่ำ ร่างกายต้องการพักและสารอาหารคุณภาพสูง โดยเฉพาะธาตุเหล็ก",
-    descEn:"All hormones are at their lowest. Your body needs rest and high-quality nutrition — especially iron.",
     eat:["เนื้อแดงไม่ติดมัน","ผักโขม","ขิง","ตับ","ถั่วเขียว"],
     avoid:["ของเย็นจัด","คาเฟอีน","อาหารดิบ"],calRange:"1,450–1,500",
   },
@@ -236,7 +232,14 @@ export default function App(){
   injectGlobalCSS()
  
   /* ── Navigation (session only — intentional) ── */
-  const [screen, setScreen] = useState("quiz")
+  const [screen, setScreen] = useState(() => {
+    const savedUser = localStorage.getItem(STORAGE_KEYS.user)
+    if (!savedUser) return "quiz"
+    try {
+      const u = JSON.parse(savedUser)
+      return u.hormoneType ? "home" : "quiz"
+    } catch { return "quiz" }
+  })
   const [lang,   setLangState] = useState(() => localStorage.getItem("he_lang") ?? "th")
  
   function setLang(l) {
