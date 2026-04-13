@@ -397,14 +397,22 @@ export default function App(){
   return(
     <AppContext.Provider value={ctx}>
       <PhoneShell>
-        {screen==="quiz"
-          ? <HormoneQuiz onComplete={handleQuizComplete} />
-          : screen==="onboarding"
-          ? <Onboarding onStart={()=>navTo("home")} />
+        {(screen==="quiz" || screen==="onboarding")
+          ? screen==="quiz"
+            ? <HormoneQuiz onComplete={handleQuizComplete} />
+            : <Onboarding onStart={()=>navTo("home")} />
+          : screens[screen]
+          ? (
+            <>
+              {screens[screen]}
+              <BottomNav current={screen} onChange={navTo}/>
+              <Toast message={toast.msg} visible={toast.visible}/>
+            </>
+          )
           : (
             <>
-              {screens[screen] ?? <Home/>}
-              <BottomNav current={screen} onChange={navTo}/>
+              <Home/>
+              <BottomNav current="home" onChange={navTo}/>
               <Toast message={toast.msg} visible={toast.visible}/>
             </>
           )
