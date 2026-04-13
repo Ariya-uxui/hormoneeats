@@ -1,598 +1,733 @@
-import { useApp, ScreenWrapper } from "../App.jsx"
+import { useState } from "react"
+import { useApp } from "../App.jsx"
  
 /* ═══════════════════════════════════════════════════
-   HOME SCREEN
-   Layout (from wireframe):
-   ┌─ TopBar ────────────────────────────────────────┐
-   │  greeting · name · avatar                        │
-   ├─ PhaseBanner ───────────────────────────────────┤
-   │  eyebrow · phase name · desc · chip              │
-   ├─ StatsStrip ────────────────────────────────────┤
-   │  [calorie] [weight] [score]                      │
-   ├─ InsightBand ───────────────────────────────────┤
-   │  · insight text                                  │
-   ├─ FoodRail ──────────────────────────────────────┤
-   │  horizontal scroll food tiles                    │
-   ├─ LogList ───────────────────────────────────────┤
-   │  today's food entries                            │
-   └─────────────────────────────────────────────────┘
+   HORMONE BALANCE QUIZ
+   6 คำถาม → คะแนน → Hormone Type → แผนอาหาร 7 วัน
+   
+   Hormone Types:
+   A = Estrogen Dominant   (คะแนน Estrogen สูง)
+   B = Progesterone Low    (คะแนน Progesterone ต่ำ)
+   C = Cortisol High       (ความเครียดสูง)
+   D = Balanced            (สมดุล)
 ═══════════════════════════════════════════════════ */
  
-/* ── Greeting helper removed - using t() in TopBar ── */
  
-/* ── Suggested foods per phase ── */
-const PHASE_FOODS = {
-  follicular: [
-    { emoji: "🥦", name: "บรอกโคลี", nameEn: "Broccoli",  cal: 55  },
-    { emoji: "🐟", name: "ปลาทูน่า", nameEn: "Tuna",   cal: 145 },
-    { emoji: "🥚", name: "ไข่ต้ม ×2", nameEn: "Boiled Eggs ×2",  cal: 140 },
-    { emoji: "🫘", name: "ถั่วเลนทิล", nameEn: "Lentils",  cal: 116 },
-    { emoji: "🌿", name: "ผักโขม", nameEn: "Spinach",     cal: 23  },
-    { emoji: "🌾", name: "ควินัว", nameEn: "Quinoa",     cal: 222 },
-  ],
-  ovulation: [
-    { emoji: "🥦", name: "บรอกโคลี", nameEn: "Broccoli",    cal: 55  },
-    { emoji: "🐟", name: "ปลาแซลมอน", nameEn: "Salmon",   cal: 208 },
-    { emoji: "🥚", name: "ไข่ต้ม ×2", nameEn: "Boiled Eggs ×2",   cal: 140 },
-    { emoji: "🥑", name: "อะโวคาโด", nameEn: "Avocado",    cal: 120 },
-    { emoji: "🫐", name: "บลูเบอรี่", nameEn: "Blueberries",   cal: 57  },
-    { emoji: "🌿", name: "ผักโขม", nameEn: "Spinach",      cal: 23  },
-  ],
-  luteal: [
-    { emoji: "🍠", name: "มันเทศ", nameEn: "Sweet Potato",      cal: 130 },
-    { emoji: "🍌", name: "กล้วยหอม", nameEn: "Banana",    cal: 90  },
-    { emoji: "🫘", name: "ถั่วดำ", nameEn: "Black Beans",       cal: 114 },
-    { emoji: "🐟", name: "ปลาทอด", nameEn: "Fried Fish",      cal: 250 },
-    { emoji: "🥬", name: "ผักคะน้า", nameEn: "Kale",    cal: 33  },
-    { emoji: "🍫", name: "ดาร์กช็อก", nameEn: "Dark Chocolate",   cal: 80  },
-  ],
-  menstrual: [
-    { emoji: "🥩", name: "เนื้อแดง", nameEn: "Lean Beef",     cal: 215 },
-    { emoji: "🌿", name: "ผักโขม", nameEn: "Spinach",       cal: 23  },
-    { emoji: "🫚", name: "ขิงต้มน้ำผึ้ง", nameEn: "Ginger Honey Tea", cal: 45  },
-    { emoji: "🫘", name: "ถั่วเขียว", nameEn: "Mung Beans",    cal: 100 },
-    { emoji: "🥚", name: "ไข่ต้ม ×2", nameEn: "Boiled Eggs ×2",    cal: 140 },
-    { emoji: "🍖", name: "ตับไก่", nameEn: "Chicken Liver",        cal: 167 },
-  ],
+/* ── Quiz Questions (EN) ── */
+const QUESTIONS_EN = [
+  {
+    id: 1, emoji: "🩸", topic: "Cycle / PMS",
+    question: "How do you feel before and during your period?",
+    options: [
+      { text: "Water retention, mood swings, breast tenderness",  scores: { estrogen: 3, progesterone: 0, cortisol: 1 } },
+      { text: "Anxiety, insomnia, frequent headaches",            scores: { estrogen: 0, progesterone: 3, cortisol: 2 } },
+      { text: "High stress, severe cramps, fatigue",              scores: { estrogen: 1, progesterone: 1, cortisol: 3 } },
+      { text: "Mild symptoms, regular cycle, feel good overall",  scores: { estrogen: 0, progesterone: 0, cortisol: 0 } },
+    ],
+  },
+  {
+    id: 2, emoji: "🍽️", topic: "Eating Habits",
+    question: "What do you crave most before your period?",
+    options: [
+      { text: "Sweets, chocolate, sugary snacks",                scores: { estrogen: 1, progesterone: 2, cortisol: 1 } },
+      { text: "Salty, fried, or fast food",                      scores: { estrogen: 2, progesterone: 0, cortisol: 2 } },
+      { text: "Everything — unusually hungry all the time",      scores: { estrogen: 1, progesterone: 3, cortisol: 1 } },
+      { text: "No special cravings, eating normally",            scores: { estrogen: 0, progesterone: 0, cortisol: 0 } },
+    ],
+  },
+  {
+    id: 3, emoji: "💪", topic: "Energy / Exercise",
+    question: "How would you describe your energy and motivation to exercise?",
+    options: [
+      { text: "Constantly fatigued, rarely exercise",            scores: { estrogen: 1, progesterone: 2, cortisol: 2 } },
+      { text: "Energy fluctuates — up and down unpredictably",   scores: { estrogen: 2, progesterone: 1, cortisol: 2 } },
+      { text: "Easily tired even after enough sleep",            scores: { estrogen: 1, progesterone: 1, cortisol: 3 } },
+      { text: "Good energy, exercise regularly",                 scores: { estrogen: 0, progesterone: 0, cortisol: 0 } },
+    ],
+  },
+  {
+    id: 4, emoji: "😴", topic: "Sleep / Stress",
+    question: "Do you have trouble sleeping or managing stress?",
+    options: [
+      { text: "Hard to fall asleep, wake up at night, overthinking", scores: { estrogen: 1, progesterone: 2, cortisol: 3 } },
+      { text: "Sleep but wake up unrefreshed and tired",             scores: { estrogen: 1, progesterone: 1, cortisol: 2 } },
+      { text: "High work stress, often feel burned out",             scores: { estrogen: 0, progesterone: 1, cortisol: 3 } },
+      { text: "Sleep well, stress is manageable",                    scores: { estrogen: 0, progesterone: 0, cortisol: 0 } },
+    ],
+  },
+  {
+    id: 5, emoji: "⚖️", topic: "Weight / Body",
+    question: "How has your weight or body shape been changing?",
+    options: [
+      { text: "Gaining around hips, thighs, and lower belly",    scores: { estrogen: 3, progesterone: 0, cortisol: 1 } },
+      { text: "Bloating and sudden water weight gain",           scores: { estrogen: 1, progesterone: 2, cortisol: 1 } },
+      { text: "Fat accumulating around the belly area",          scores: { estrogen: 1, progesterone: 1, cortisol: 3 } },
+      { text: "Weight is fairly stable, no major issues",        scores: { estrogen: 0, progesterone: 0, cortisol: 0 } },
+    ],
+  },
+  {
+    id: 6, emoji: "🌿", topic: "Overall Health",
+    question: "Which symptoms do you experience most often?",
+    options: [
+      { text: "Oily skin, hormonal acne, some hair loss",        scores: { estrogen: 3, progesterone: 1, cortisol: 1 } },
+      { text: "Heart palpitations, cold hands, easily anxious",  scores: { estrogen: 0, progesterone: 2, cortisol: 3 } },
+      { text: "Brain fog, poor memory, difficulty focusing",     scores: { estrogen: 2, progesterone: 2, cortisol: 2 } },
+      { text: "Generally healthy, no obvious symptoms",          scores: { estrogen: 0, progesterone: 0, cortisol: 0 } },
+    ],
+  },
+]
+ 
+/* ── Quiz Questions ── */
+const QUESTIONS = [
+  {
+    id: 1,
+    emoji: "🩸",
+    topic: "รอบเดือน / PMS",
+    question: "อาการก่อนและระหว่างมีประจำเดือนเป็นอย่างไร?",
+    options: [
+      { text: "บวมน้ำ อารมณ์แปรปรวน เจ็บหน้าอกมาก",  scores: { estrogen: 3, progesterone: 0, cortisol: 1 } },
+      { text: "วิตกกังวล นอนไม่หลับ ปวดหัวบ่อย",       scores: { estrogen: 0, progesterone: 3, cortisol: 2 } },
+      { text: "เครียดมาก ปวดประจำเดือนรุนแรง อ่อนเพลีย",scores: { estrogen: 1, progesterone: 1, cortisol: 3 } },
+      { text: "อาการน้อย รอบสม่ำเสมอ รู้สึกดีโดยรวม",  scores: { estrogen: 0, progesterone: 0, cortisol: 0 } },
+    ],
+  },
+  {
+    id: 2,
+    emoji: "🍽️",
+    topic: "พฤติกรรมการกิน",
+    question: "คุณอยากกินอะไรมากที่สุดในช่วงก่อนมีประจำเดือน?",
+    options: [
+      { text: "ของหวาน ช็อกโกแลต ขนมหวานต่างๆ",        scores: { estrogen: 1, progesterone: 2, cortisol: 1 } },
+      { text: "ของเค็ม ของทอด Fast food",               scores: { estrogen: 2, progesterone: 0, cortisol: 2 } },
+      { text: "อาหารทุกอย่าง หิวง่ายมากกว่าปกติ",       scores: { estrogen: 1, progesterone: 3, cortisol: 1 } },
+      { text: "ไม่ค่อยอยากกินอะไรพิเศษ ปกติดี",        scores: { estrogen: 0, progesterone: 0, cortisol: 0 } },
+    ],
+  },
+  {
+    id: 3,
+    emoji: "💪",
+    topic: "พลังงาน / การออกกำลังกาย",
+    question: "ระดับพลังงานและกำลังใจออกกำลังกายเป็นอย่างไร?",
+    options: [
+      { text: "อ่อนเพลียตลอด ออกกำลังกายได้น้อย",       scores: { estrogen: 1, progesterone: 2, cortisol: 2 } },
+      { text: "พลังงานขึ้นๆ ลงๆ ไม่สม่ำเสมอ",           scores: { estrogen: 2, progesterone: 1, cortisol: 2 } },
+      { text: "เหนื่อยง่ายผิดปกติ แม้นอนพอ",            scores: { estrogen: 1, progesterone: 1, cortisol: 3 } },
+      { text: "พลังงานดี ออกกำลังกายสม่ำเสมอ",          scores: { estrogen: 0, progesterone: 0, cortisol: 0 } },
+    ],
+  },
+  {
+    id: 4,
+    emoji: "😴",
+    topic: "การนอนหลับ / ความเครียด",
+    question: "คุณมีปัญหาเรื่องการนอนหลับหรือความเครียดไหม?",
+    options: [
+      { text: "นอนหลับยาก ตื่นกลางดึก คิดมากก่อนนอน",  scores: { estrogen: 1, progesterone: 2, cortisol: 3 } },
+      { text: "นอนหลับ แต่ตื่นมาไม่สดชื่น เหนื่อย",    scores: { estrogen: 1, progesterone: 1, cortisol: 2 } },
+      { text: "เครียดงานมาก รู้สึก Burnout บ่อย",       scores: { estrogen: 0, progesterone: 1, cortisol: 3 } },
+      { text: "นอนหลับดี ความเครียดพอจัดการได้",        scores: { estrogen: 0, progesterone: 0, cortisol: 0 } },
+    ],
+  },
+  {
+    id: 5,
+    emoji: "⚖️",
+    topic: "น้ำหนัก / รูปร่าง",
+    question: "น้ำหนักและรูปร่างมีการเปลี่ยนแปลงอย่างไร?",
+    options: [
+      { text: "น้ำหนักขึ้นบริเวณสะโพก ต้นขา หน้าท้องล่าง", scores: { estrogen: 3, progesterone: 0, cortisol: 1 } },
+      { text: "ท้องอืด บวมน้ำ น้ำหนักขึ้นแบบฉับพลัน",   scores: { estrogen: 1, progesterone: 2, cortisol: 1 } },
+      { text: "ไขมันสะสมบริเวณท้องโดยเฉพาะ",            scores: { estrogen: 1, progesterone: 1, cortisol: 3 } },
+      { text: "น้ำหนักค่อนข้างคงที่ ไม่มีปัญหาพิเศษ",   scores: { estrogen: 0, progesterone: 0, cortisol: 0 } },
+    ],
+  },
+  {
+    id: 6,
+    emoji: "🌿",
+    topic: "สุขภาพโดยรวม",
+    question: "อาการที่รู้สึกบ่อยที่สุดในชีวิตประจำวัน?",
+    options: [
+      { text: "ผิวมัน สิวฮอร์โมน ผมร่วงบ้าง",          scores: { estrogen: 3, progesterone: 1, cortisol: 1 } },
+      { text: "หัวใจสั่น มือเย็น วิตกกังวลง่าย",        scores: { estrogen: 0, progesterone: 2, cortisol: 3 } },
+      { text: "ความจำแย่ลง หมอกในสมอง สมาธิสั้น",      scores: { estrogen: 2, progesterone: 2, cortisol: 2 } },
+      { text: "สุขภาพดีโดยรวม ไม่มีอาการชัดเจน",       scores: { estrogen: 0, progesterone: 0, cortisol: 0 } },
+    ],
+  },
+]
+ 
+/* ── Hormone Type Results ── */
+const HORMONE_TYPES = {
+  estrogen_dominant: {
+    type:    "Estrogen Dominant",
+    emoji:   "🌸",
+    color:   "#C4899A",
+    colorLt: "#F5EAF0",
+    textClr: "#8B4050",
+    title:   "Estrogen สูงเกินสมดุล",
+    desc:    "ร่างกายมี Estrogen มากเกินไปเมื่อเทียบกับ Progesterone ส่งผลให้มี PMS รุนแรง บวมน้ำ และน้ำหนักขึ้นบริเวณสะโพก",
+    focus:   ["ลด Estrogen ส่วนเกิน", "เพิ่มไฟเบอร์", "ลดไขมันสัตว์"],
+    avoid:   ["แอลกอฮอล์", "ถั่วเหลืองมาก", "พลาสติก BPA"],
+    eat:     ["บรอกโคลี", "เมล็ดแฟลกซ์", "ผักใบเขียว", "ปลาแซลมอน", "ข้าวกล้อง"],
+    phase:   "follicular",
+  },
+  progesterone_low: {
+    type:    "Progesterone ต่ำ",
+    emoji:   "🌙",
+    color:   "#9EB0C4",
+    colorLt: "#EAF0F5",
+    textClr: "#3A5070",
+    title:   "Progesterone ต่ำกว่าเกณฑ์",
+    desc:    "Progesterone ต่ำทำให้นอนไม่หลับ วิตกกังวล หิวบ่อย และมีอาการ PMS รุนแรงช่วงก่อนมีประจำเดือน",
+    focus:   ["เพิ่ม Progesterone", "ลดความเครียด", "เพิ่มแมกนีเซียม"],
+    avoid:   ["คาเฟอีนมาก", "น้ำตาล", "แอลกอฮอล์"],
+    eat:     ["มันเทศ", "กล้วย", "ถั่วดำ", "ดาร์กช็อก", "ชาคาโมมายล์"],
+    phase:   "luteal",
+  },
+  cortisol_high: {
+    type:    "Cortisol สูง",
+    emoji:   "⚡",
+    color:   "#C4A882",
+    colorLt: "#F5EDE0",
+    textClr: "#7A4A28",
+    title:   "Cortisol (ฮอร์โมนเครียด) สูง",
+    desc:    "ความเครียดเรื้อรังทำให้ Cortisol สูง ส่งผลกระทบต่อฮอร์โมนทุกตัว ไขมันสะสมบริเวณท้อง นอนไม่หลับ และ Burnout",
+    focus:   ["ลด Cortisol", "ฟื้นฟู Adrenal", "จัดการความเครียด"],
+    avoid:   ["คาเฟอีน", "น้ำตาล", "ออกกำลังกายหนักเกินไป"],
+    eat:     ["ชาขมิ้น", "อะโวคาโด", "วอลนัท", "ผักโขม", "ชา Ashwagandha"],
+    phase:   "menstrual",
+  },
+  balanced: {
+    type:    "Balanced",
+    emoji:   "✨",
+    color:   "#A8C4A0",
+    colorLt: "#EEF5EC",
+    textClr: "#4A6454",
+    title:   "ฮอร์โมนสมดุลดี",
+    desc:    "ยอดเยี่ยม! ฮอร์โมนของคุณอยู่ในระดับที่ดี รักษาความสมดุลนี้ไว้ด้วยการกินอาหารหลากหลายและดูแลตัวเองสม่ำเสมอ",
+    focus:   ["รักษาความสมดุล", "กินหลากหลาย", "ดูแลสุขภาพลำไส้"],
+    avoid:   ["อาหารแปรรูป", "น้ำตาลสูง", "ความเครียดสะสม"],
+    eat:     ["ผักหลากสี", "โปรตีนคุณภาพ", "ไขมันดี", "ธัญพืช", "โปรไบโอติก"],
+    phase:   "ovulation",
+  },
 }
  
- 
-/* ── 7-Day Meal Plan per hormone type ── */
-const MEAL_PLANS_HOME = {
+/* ── 7-day meal plan per type ── */
+const MEAL_PLANS = {
   estrogen_dominant: [
-    { day:"จันทร์", dayEn:"Mon",  b:"โอ๊ตมีล + เมล็ดแฟลกซ์ + เบอรี่", bEn:"Oatmeal + Flaxseeds + Berries",      l:"ปลาแซลมอนอบ + ข้าวกล้อง + บรอกโคลี", lEn:"Baked Salmon + Brown Rice + Broccoli",  d:"ต้มยำเต้าหู้ + ผักโขมผัด", dEn:"Tofu Tom Yum + Stir-fried Spinach" },
-    { day:"อังคาร", dayEn:"Tue",  b:"ไข่ต้ม 2 ฟอง + ขนมปังไรย์", bEn:"Boiled Eggs + Rye Bread",            l:"สลัดผักโขม + วอลนัท", lEn:"Spinach Salad + Walnuts",                   d:"ไก่อบสมุนไพร + มันเทศ", dEn:"Herb Roasted Chicken + Sweet Potato" },
-    { day:"พุธ", dayEn:"Wed",     b:"สมูทตี้ผักโขม + กล้วย", bEn:"Spinach Smoothie + Banana",                 l:"ควินัวโบล์ + ผักรวม + เต้าหู้", lEn:"Quinoa Bowl + Mixed Veg + Tofu",         d:"แกงส้มผักรวม + ข้าวกล้อง", dEn:"Sour Curry + Brown Rice" },
-    { day:"พฤหัส", dayEn:"Thu",  b:"กรีกโยเกิร์ต + เมล็ดแฟลกซ์", bEn:"Greek Yogurt + Flaxseeds",            l:"ปลาทูน่า + สลัดผัก", lEn:"Tuna + Green Salad",                    d:"ผัดผักคะน้า + เนื้อแดง", dEn:"Stir-fried Kale + Lean Beef" },
-    { day:"ศุกร์", dayEn:"Fri",   b:"ข้าวโอ๊ต + บลูเบอรี่ + อัลมอนด์", bEn:"Oatmeal + Blueberries + Almonds",       l:"ซุปผักรวม + ข้าวกล้อง", lEn:"Mixed Veg Soup + Brown Rice",                 d:"ปลาแซลมอนย่าง + บรอกโคลี", dEn:"Grilled Salmon + Broccoli" },
-    { day:"เสาร์", dayEn:"Sat",  b:"แพนเค้กกล้วยไข่ + เบอรี่รวม", bEn:"Banana Egg Pancake + Mixed Berries",            l:"บิบิมบับ", lEn:"Bibimbap",                               d:"ต้มข่าไก่ + ข้าวกล้อง", dEn:"Tom Kha Gai + Brown Rice" },
-    { day:"อาทิตย์", dayEn:"Sun",b:"อะโวคาโดโทสต์ + ไข่ลวก", bEn:"Avocado Toast + Poached Egg",                l:"ส้มตำ + ไก่ย่าง", lEn:"Papaya Salad + Grilled Chicken",                       d:"มิโซะซุป + ปลาแซลมอน", dEn:"Miso Soup + Salmon" },
+    { day:"จันทร์",  breakfast:"โอ๊ตมีล + เมล็ดแฟลกซ์ + เบอรี่",      lunch:"ปลาแซลมอนอบ + ข้าวกล้อง + บรอกโคลี",   dinner:"ต้มยำเต้าหู้ + ผักโขมผัด" },
+    { day:"อังคาร",  breakfast:"ไข่ต้ม 2 ฟอง + ขนมปังไรย์",            lunch:"สลัดผักโขม + วอลนัท + น้ำสลัดมะนาว",    dinner:"ไก่อบสมุนไพร + มันเทศ" },
+    { day:"พุธ",     breakfast:"สมูทตี้ผักโขม + กล้วย + นมอัลมอนด์",    lunch:"ควินัวโบล์ + ผักรวม + เต้าหู้",          dinner:"แกงส้มผักรวม + ข้าวกล้อง" },
+    { day:"พฤหัส",  breakfast:"กรีกโยเกิร์ต + เมล็ดแฟลกซ์ + สตรอว์เบอรี่",lunch:"ปลาทูน่า + สลัดผัก + ขนมปังโฮลวีท",   dinner:"ผัดผักคะน้า + เนื้อแดงไม่ติดมัน" },
+    { day:"ศุกร์",   breakfast:"ข้าวโอ๊ต + บลูเบอรี่ + อัลมอนด์",       lunch:"ซุปผักรวม + ข้าวกล้อง",                 dinner:"ปลาแซลมอนย่าง + บรอกโคลีนึ่ง" },
+    { day:"เสาร์",  breakfast:"แพนเค้กกล้วยไข่ + เบอรี่รวม",            lunch:"บิบิมบับ (ข้าว + ผักหลายชนิด)",         dinner:"ต้มข่าไก่ + ข้าวกล้อง" },
+    { day:"อาทิตย์",breakfast:"อะโวคาโดโทสต์ + ไข่ลวก",                lunch:"ส้มตำ + ไก่ย่าง",                       dinner:"มิโซะซุป + ปลาแซลมอน + เอดามาเมะ" },
   ],
   progesterone_low: [
-    { day:"จันทร์", dayEn:"Mon",  b:"กล้วยหอม + เนยอัลมอนด์ + ชาคาโมมายล์", bEn:"Banana + Almond Butter + Chamomile Tea", l:"ไก่อบ + มันเทศ + ผักโขม", lEn:"Roasted Chicken + Sweet Potato + Spinach",              d:"ต้มยำกุ้ง + ข้าวกล้อง", dEn:"Tom Yum Goong + Brown Rice" },
-    { day:"อังคาร", dayEn:"Tue",  b:"โอ๊ตมีล + กล้วย + ดาร์กช็อก", bEn:"Oatmeal + Banana + Dark Chocolate",            l:"ถั่วดำ + ข้าวกล้อง + ผักสด", lEn:"Black Beans + Brown Rice + Fresh Veg",           d:"แกงเขียวหวาน + ข้าวกล้อง", dEn:"Green Curry + Brown Rice" },
-    { day:"พุธ", dayEn:"Wed",     b:"ไข่ต้ม + ขนมปังโฮลวีท + ชาขิง", bEn:"Boiled Eggs + Whole Wheat Bread + Ginger Tea",          l:"ปลาทอด + ผัดผักรวม", lEn:"Fried Fish + Stir-fried Veg",                   d:"ซุนดูบูจิเก + ข้าว", dEn:"Sundubu Jjigae + Rice" },
-    { day:"พฤหัส", dayEn:"Thu",  b:"กรีกโยเกิร์ต + กล้วย + วอลนัท", bEn:"Greek Yogurt + Banana + Walnuts",           l:"สลัดอะโวคาโด + ปลาทูน่า", lEn:"Avocado Salad + Tuna",              d:"ผัดกะเพราไก่ + ข้าวกล้อง", dEn:"Basil Chicken + Brown Rice" },
-    { day:"ศุกร์", dayEn:"Fri",   b:"สมูทตี้กล้วย + นมโอ๊ต", bEn:"Banana Smoothie + Oat Milk",                  l:"ข้าวหน้าปลาแซลมอน + สลัด", lEn:"Salmon Rice Bowl + Salad",             d:"ต้มข่าไก่ + ข้าวกล้อง", dEn:"Tom Kha Gai + Brown Rice" },
-    { day:"เสาร์", dayEn:"Sat",  b:"ข้าวโอ๊ต + เมล็ดแฟลกซ์", bEn:"Oatmeal + Flaxseeds",                  l:"ซัมเกทัง", lEn:"Samgyetang",                              d:"ผักโขมผัดกระเทียม + ไข่", dEn:"Garlic Spinach + Egg" },
-    { day:"อาทิตย์", dayEn:"Sun",b:"แพนเค้กกล้วยไข่ + ดาร์กช็อก", bEn:"Banana Egg Pancake + Dark Chocolate",             l:"ก๋วยเตี๋ยวน้ำใส + ผักโขม", lEn:"Clear Noodle Soup + Spinach",             d:"ปลาแซลมอนย่าง + มันเทศ", dEn:"Grilled Salmon + Sweet Potato" },
+    { day:"จันทร์",  breakfast:"กล้วยหอม + เนยอัลมอนด์ + ชาคาโมมายล์",  lunch:"ไก่อบ + มันเทศ + ผักโขม",              dinner:"ต้มยำกุ้ง + ข้าวกล้อง" },
+    { day:"อังคาร",  breakfast:"โอ๊ตมีล + กล้วย + ดาร์กช็อก",            lunch:"ถั่วดำ + ข้าวกล้อง + ผักสด",            dinner:"แกงเขียวหวาน (เบา) + ข้าวกล้อง" },
+    { day:"พุธ",     breakfast:"ไข่ต้ม + ขนมปังโฮลวีท + ชาขิง",          lunch:"ปลาทอด + ผัดผักรวม",                   dinner:"ซุนดูบูจิเก + ข้าว" },
+    { day:"พฤหัส",  breakfast:"กรีกโยเกิร์ต + กล้วย + วอลนัท",           lunch:"สลัดอะโวคาโด + ปลาทูน่า",              dinner:"ผัดกะเพราไก่ (เบา) + ข้าวกล้อง" },
+    { day:"ศุกร์",   breakfast:"สมูทตี้กล้วย + นมโอ๊ต + อัลมอนด์",       lunch:"ข้าวหน้าปลาแซลมอน + สลัด",             dinner:"ต้มข่าไก่ + ข้าวกล้อง" },
+    { day:"เสาร์",  breakfast:"ข้าวโอ๊ต + เมล็ดแฟลกซ์ + สตรอว์เบอรี่",   lunch:"ซัมเกทัง (ไก่ตุ๋นโสม)",               dinner:"ผักโขมผัดกระเทียม + ไข่ดาว" },
+    { day:"อาทิตย์",breakfast:"แพนเค้กกล้วยไข่ + ดาร์กช็อก",             lunch:"ก๋วยเตี๋ยวน้ำใส + ผักโขม",             dinner:"ปลาแซลมอนย่าง + มันเทศ" },
   ],
   cortisol_high: [
-    { day:"จันทร์", dayEn:"Mon",  b:"ชาขมิ้น + โอ๊ตมีล + วอลนัท", bEn:"Turmeric Tea + Oatmeal + Walnuts",             l:"สลัดผักโขม + อะโวคาโด + แซลมอน", lEn:"Spinach Salad + Avocado + Salmon",      d:"ซุปผักรวม + ข้าวกล้อง", dEn:"Mixed Veg Soup + Brown Rice" },
-    { day:"อังคาร", dayEn:"Tue",  b:"สมูทตี้อะโวคาโด + ชา Ashwagandha", bEn:"Avocado Smoothie + Ashwagandha Tea",        l:"ไก่อบสมุนไพร + บรอกโคลีนึ่ง", lEn:"Herb Chicken + Steamed Broccoli",        d:"มิโซะซุป + เต้าหู้เย็น", dEn:"Miso Soup + Cold Tofu" },
-    { day:"พุธ", dayEn:"Wed",     b:"ไข่ต้ม + ขนมปังไรย์ + ชา Chamomile", bEn:"Boiled Eggs + Rye Bread + Chamomile Tea",      l:"ควินัวโบล์ + ถั่วดำ", lEn:"Quinoa Bowl + Black Beans",                  d:"ต้มยำเต้าหู้", dEn:"Tofu Tom Yum" },
-    { day:"พฤหัส", dayEn:"Thu",  b:"กรีกโยเกิร์ต + บลูเบอรี่ + วอลนัท", bEn:"Greek Yogurt + Blueberries + Walnuts",       l:"ปลาแซลมอนอบ + มันเทศ", lEn:"Baked Salmon + Sweet Potato",                d:"ผัดผักคะน้า + ไก่", dEn:"Stir-fried Kale + Chicken" },
-    { day:"ศุกร์", dayEn:"Fri",   b:"โอ๊ตมีล + กล้วย + ชาขิง", bEn:"Oatmeal + Banana + Ginger Tea",                 l:"ส้มตำ (ไม่เผ็ดมาก) + ข้าวกล้อง", lEn:"Mild Papaya Salad + Brown Rice",      d:"แกงจืดเต้าหู้ + ข้าวกล้อง", dEn:"Clear Tofu Soup + Brown Rice" },
-    { day:"เสาร์", dayEn:"Sat",  b:"อะโวคาโดโทสต์ + ชา Ashwagandha", bEn:"Avocado Toast + Ashwagandha Tea",           l:"ชาบู-ชาบู ผักเยอะ", lEn:"Shabu-Shabu with Lots of Veg",                   d:"ต้มข่าไก่", dEn:"Tom Kha Gai" },
-    { day:"อาทิตย์", dayEn:"Sun",b:"สมูทตี้มะม่วง + ขมิ้น", bEn:"Mango Smoothie + Turmeric",                    l:"ข้าวกล้อง + ไก่ย่าง + ผักโขม", lEn:"Brown Rice + Grilled Chicken + Spinach",        d:"ซุปผักรวม + ขนมปังโฮลวีท", dEn:"Mixed Veg Soup + Whole Wheat Bread" },
+    { day:"จันทร์",  breakfast:"ชาขมิ้น + โอ๊ตมีล + วอลนัท",             lunch:"สลัดผักโขม + อะโวคาโด + แซลมอน",       dinner:"ซุปผักรวม + ข้าวกล้อง" },
+    { day:"อังคาร",  breakfast:"สมูทตี้อะโวคาโด + ชา Ashwagandha",        lunch:"ไก่อบสมุนไพร + บรอกโคลีนึ่ง",         dinner:"มิโซะซุป + เต้าหู้เย็น" },
+    { day:"พุธ",     breakfast:"ไข่ต้ม + ขนมปังไรย์ + ชา Chamomile",      lunch:"ควินัวโบล์ + ถั่วดำ + ผักรวม",          dinner:"ต้มยำเต้าหู้ (เบา)" },
+    { day:"พฤหัส",  breakfast:"กรีกโยเกิร์ต + บลูเบอรี่ + วอลนัท",       lunch:"ปลาแซลมอนอบ + มันเทศ",                dinner:"ผัดผักคะน้า + ไก่" },
+    { day:"ศุกร์",   breakfast:"โอ๊ตมีล + กล้วย + ชาขิง",                 lunch:"ส้มตำ (ไม่เผ็ดมาก) + ข้าวกล้อง",       dinner:"แกงจืดเต้าหู้ + ข้าวกล้อง" },
+    { day:"เสาร์",  breakfast:"อะโวคาโดโทสต์ + ชา Ashwagandha",          lunch:"ชาบู-ชาบู ผักเยอะ",                   dinner:"ต้มข่าไก่ (เบา)" },
+    { day:"อาทิตย์",breakfast:"สมูทตี้มะม่วง + ขมิ้น + นมอัลมอนด์",      lunch:"ข้าวกล้อง + ไก่ย่าง + ผักโขม",        dinner:"ซุปผักรวม + ขนมปังโฮลวีท" },
   ],
   balanced: [
-    { day:"จันทร์", dayEn:"Mon",  b:"โอ๊ตมีล + เบอรี่ + เมล็ดแฟลกซ์", bEn:"โอ๊ตมีล + เบอรี่ + เมล็ดแฟลกซ์",         l:"ปลาแซลมอน + ข้าวกล้อง + ผัก", lEn:"Salmon + Brown Rice + Veg",        d:"ต้มยำกุ้ง + ข้าวกล้อง", dEn:"Tom Yum Goong + Brown Rice" },
-    { day:"อังคาร", dayEn:"Tue",  b:"ไข่ต้ม + ขนมปังโฮลวีท + อะโวคาโด", bEn:"Boiled Eggs + Whole Wheat Bread + Avocado",       l:"บิบิมบับ + เต้าหู้", lEn:"Bibimbap + Tofu",                   d:"ไก่อบสมุนไพร + มันเทศ", dEn:"Herb Roasted Chicken + Sweet Potato" },
-    { day:"พุธ", dayEn:"Wed",     b:"กรีกโยเกิร์ต + กล้วย + วอลนัท", bEn:"Greek Yogurt + Banana + Walnuts",           l:"สลัดผักโขม + ปลาทูน่า", lEn:"Spinach Salad + Tuna",               d:"แกงเขียวหวาน + ข้าวกล้อง", dEn:"Green Curry + Brown Rice" },
-    { day:"พฤหัส", dayEn:"Thu",  b:"สมูทตี้เบอรี่ + นมอัลมอนด์", bEn:"Berry Smoothie + Almond Milk",               l:"ซูชิ (8 ชิ้น) + มิโซะซุป", lEn:"Sushi (8 pcs) + Miso Soup",            d:"ผัดผักรวม + ไก่", dEn:"Stir-fried Mixed Veg + Chicken" },
-    { day:"ศุกร์", dayEn:"Fri",   b:"ข้าวโอ๊ต + บลูเบอรี่ + อัลมอนด์", bEn:"Oatmeal + Blueberries + Almonds",         l:"ก๋วยเตี๋ยวน้ำใส + ผักโขม", lEn:"Clear Noodle Soup + Spinach",            d:"ปลาแซลมอนย่าง + บรอกโคลี", dEn:"Grilled Salmon + Broccoli" },
-    { day:"เสาร์", dayEn:"Sat",  b:"แพนเค้กกล้วยไข่ + สตรอว์เบอรี่", bEn:"Banana Egg Pancake + Strawberries",           l:"ส้มตำ + ไก่ย่าง + ข้าวกล้อง", lEn:"Papaya Salad + Grilled Chicken + Brown Rice",        d:"ชาบู-ชาบู ผักเยอะ", dEn:"Shabu-Shabu with Lots of Veg" },
-    { day:"อาทิตย์", dayEn:"Sun",b:"อะโวคาโดโทสต์ + ไข่ลวก", bEn:"Avocado Toast + Poached Egg",                  l:"ควินัวโบล์ + ถั่วดำ", lEn:"Quinoa Bowl + Black Beans",                  d:"ต้มข่าไก่ + ข้าวกล้อง", dEn:"Tom Kha Gai + Brown Rice" },
+    { day:"จันทร์",  breakfast:"โอ๊ตมีล + เบอรี่ + เมล็ดแฟลกซ์",         lunch:"ปลาแซลมอน + ข้าวกล้อง + ผัก",         dinner:"ต้มยำกุ้ง + ข้าวกล้อง" },
+    { day:"อังคาร",  breakfast:"ไข่ต้ม + ขนมปังโฮลวีท + อะโวคาโด",       lunch:"บิบิมบับ + เต้าหู้",                   dinner:"ไก่อบสมุนไพร + มันเทศ" },
+    { day:"พุธ",     breakfast:"กรีกโยเกิร์ต + กล้วย + วอลนัท",           lunch:"สลัดผักโขม + ปลาทูน่า",               dinner:"แกงเขียวหวาน (เบา) + ข้าวกล้อง" },
+    { day:"พฤหัส",  breakfast:"สมูทตี้เบอรี่ + นมอัลมอนด์",               lunch:"ซูชิ (8 ชิ้น) + มิโซะซุป",             dinner:"ผัดผักรวม + ไก่" },
+    { day:"ศุกร์",   breakfast:"ข้าวโอ๊ต + บลูเบอรี่ + อัลมอนด์",         lunch:"ก๋วยเตี๋ยวน้ำใส + ผักโขม",            dinner:"ปลาแซลมอนย่าง + บรอกโคลี" },
+    { day:"เสาร์",  breakfast:"แพนเค้กกล้วยไข่ + สตรอว์เบอรี่",           lunch:"ส้มตำ + ไก่ย่าง + ข้าวกล้อง",         dinner:"ชาบู-ชาบู ผักเยอะ" },
+    { day:"อาทิตย์",breakfast:"อะโวคาโดโทสต์ + ไข่ลวก",                  lunch:"ควินัวโบล์ + ถั่วดำ",                  dinner:"ต้มข่าไก่ + ข้าวกล้อง" },
   ],
 }
  
-function getTodayMeal(hormoneType) {
-  const plan = MEAL_PLANS_HOME[hormoneType] ?? MEAL_PLANS_HOME.balanced
-  const dayOfWeek = new Date().getDay() // 0=อาทิตย์
-  const idx = dayOfWeek === 0 ? 6 : dayOfWeek - 1
-  return plan[idx]
+/* ═══════════════════════════════════════════════════
+   SCORE → HORMONE TYPE
+═══════════════════════════════════════════════════ */
+function calcHormoneType(scores) {
+  const total = scores.estrogen + scores.progesterone + scores.cortisol
+  if (total <= 3) return "balanced"
+  if (scores.estrogen >= scores.progesterone && scores.estrogen >= scores.cortisol) return "estrogen_dominant"
+  if (scores.progesterone >= scores.estrogen && scores.progesterone >= scores.cortisol) return "progesterone_low"
+  return "cortisol_high"
 }
  
 /* ═══════════════════════════════════════════════════
-   SUB-COMPONENTS
+   PROGRESS BAR
 ═══════════════════════════════════════════════════ */
- 
-/* TopBar */
-function TopBar({ user }) {
-  const { tokens, lang, setLang, t } = useApp()
-  const h = new Date().getHours()
-  const greeting = h < 12 ? t("home.greeting_morning") : h < 17 ? t("home.greeting_afternoon") : t("home.greeting_evening")
+function ProgressBar({ current, total, color }) {
   return (
-    <div className="fade-up" style={{
-      background: tokens.creamSoft,
-      padding: "14px 20px 12px",
-      display: "flex", justifyContent: "space-between", alignItems: "center",
-      borderBottom: `1px solid ${tokens.borderLt}`,
-      flexShrink: 0,
-    }}>
-      <div>
-        <div style={{ fontSize: 11, color: tokens.stone, letterSpacing: ".03em", marginBottom: 3 }}>
-          {greeting}
-        </div>
-        <div style={{
-          fontFamily: "'Playfair Display', serif",
-          fontSize: 20, color: tokens.cocoa,
-        }}>
-          {user.name}
-        </div>
+    <div style={{ height:3, background:"rgba(255,255,255,.3)", borderRadius:2, overflow:"hidden" }}>
+      <div style={{
+        height:"100%",
+        width:`${(current/total)*100}%`,
+        background:"white",
+        borderRadius:2,
+        transition:"width .4s ease",
+      }}/>
+    </div>
+  )
+}
+ 
+/* ═══════════════════════════════════════════════════
+   QUESTION CARD
+═══════════════════════════════════════════════════ */
+function QuestionCard({ q, qIndex, total, selected, onSelect, tokens }) {
+  return (
+    <div style={{ flex:1, display:"flex", flexDirection:"column" }}>
+      {/* Q counter */}
+      <div style={{ fontSize:11, color:tokens.stone, marginBottom:4, letterSpacing:".06em" }}>
+        คำถาม {qIndex + 1} / {total}
       </div>
-      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-        {/* Lang toggle */}
-        <div style={{ display:"flex", background:tokens.cream, border:`1px solid ${tokens.border}`, borderRadius:999, overflow:"hidden" }}>
-          {["th","en"].map(l => (
-            <button key={l} onClick={() => setLang(l)} style={{
-              padding:"5px 11px",
-              background: lang===l ? tokens.cocoa : "transparent",
-              color:      lang===l ? tokens.cream  : tokens.stone,
-              border:"none", cursor:"pointer",
-              fontSize:11, fontWeight:500,
-              fontFamily:"'DM Sans',sans-serif",
-              transition:"all .2s",
-            }}>
-              {l==="th" ? "TH" : "EN"}
-            </button>
+ 
+      {/* Topic badge */}
+      <div style={{
+        display:"inline-flex", alignItems:"center", gap:6,
+        background:tokens.lavenderLt, borderRadius:999,
+        padding:"4px 10px", marginBottom:8, alignSelf:"flex-start",
+        fontSize:11, fontWeight:500, color:tokens.lavenderDk,
+      }}>
+        {q.emoji} {q.topic}
+      </div>
+ 
+      {/* Question */}
+      <div style={{
+        fontFamily:"'Playfair Display',serif",
+        fontSize:16, color:tokens.cocoa, lineHeight:1.4, marginBottom:12,
+      }}>
+        {q.question}
+      </div>
+ 
+      {/* Options */}
+      <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
+        {q.options.map((opt, i) => {
+          const isSelected = selected === i
+          return (
+            <div
+              key={i}
+              onClick={() => onSelect(i)}
+              style={{
+                padding:"10px 14px",
+                border:`2px solid ${isSelected ? tokens.lavender : tokens.border}`,
+                borderRadius:14,
+                background: isSelected ? tokens.lavenderLt : tokens.creamSoft,
+                cursor:"pointer",
+                display:"flex", alignItems:"center", gap:12,
+                transition:"all .18s",
+              }}
+              onMouseDown={e=>e.currentTarget.style.transform="scale(.99)"}
+              onMouseUp={e=>e.currentTarget.style.transform="scale(1)"}
+            >
+              <div style={{
+                width:22, height:22, borderRadius:"50%",
+                border:`2px solid ${isSelected ? tokens.lavenderDk : tokens.stoneLt}`,
+                background: isSelected ? tokens.lavenderDk : "transparent",
+                display:"flex", alignItems:"center", justifyContent:"center",
+                flexShrink:0, transition:"all .18s",
+              }}>
+                {isSelected && <span style={{ color:"white", fontSize:11, fontWeight:700 }}>✓</span>}
+              </div>
+              <span style={{
+                fontSize:13, lineHeight:1.5,
+                color: isSelected ? tokens.lavenderDk : tokens.cocoaMid,
+                fontWeight: isSelected ? 500 : 400,
+              }}>
+                {opt.text}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+ 
+/* ═══════════════════════════════════════════════════
+   RESULT SCREEN
+═══════════════════════════════════════════════════ */
+function ResultScreen({ hormoneType, scores, onFinish, tokens, lang }) {
+  const [showPlan, setShowPlan] = useState(false)
+  const result   = HORMONE_TYPES[hormoneType]
+  const plan     = MEAL_PLANS[hormoneType]
+  const total    = scores.estrogen + scores.progesterone + scores.cortisol
+  const maxScore = QUESTIONS.length * 3
+ 
+  const bars = [
+    { label:"Estrogen",     val:scores.estrogen,     max:maxScore/2, color:"#C4899A" },
+    { label:"Progesterone", val:scores.progesterone, max:maxScore/2, color:"#9EB0C4" },
+    { label:"Cortisol",     val:scores.cortisol,     max:maxScore/2, color:"#C4A882" },
+  ]
+ 
+  return (
+    <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
+      <div className="scroll-body" style={{ flex:1, padding:"20px 20px 100px" }}>
+ 
+        {/* Result hero */}
+        <div style={{
+          background: result.color,
+          borderRadius:24, padding:"24px 20px 20px",
+          color:"white", textAlign:"center", marginBottom:16,
+          position:"relative", overflow:"hidden",
+        }}>
+          <div style={{ position:"absolute", top:-40, right:-40, width:140, height:140,
+            borderRadius:"50%", background:"rgba(255,255,255,.1)", pointerEvents:"none" }}/>
+          <div style={{ fontSize:52, marginBottom:10 }}>{result.emoji}</div>
+          <div style={{ fontSize:12, opacity:.8, letterSpacing:".1em",
+            textTransform:"uppercase", marginBottom:6 }}>ประเภทฮอร์โมนของคุณ</div>
+          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:24, marginBottom:8 }}>
+            {result.title}
+          </div>
+          <div style={{ fontSize:13, opacity:.85, lineHeight:1.65 }}>
+            {result.desc}
+          </div>
+        </div>
+ 
+        {/* Hormone bars */}
+        <div style={{
+          background:tokens.creamSoft, border:`1px solid ${tokens.borderLt}`,
+          borderRadius:20, padding:"14px 16px", marginBottom:12,
+        }}>
+          <div style={{ fontSize:12, fontWeight:500, color:tokens.cocoa, marginBottom:12 }}>
+            ระดับฮอร์โมนของคุณ
+          </div>
+          {bars.map(b => (
+            <div key={b.label} style={{ marginBottom:10 }}>
+              <div style={{ display:"flex", justifyContent:"space-between",
+                fontSize:11, marginBottom:5 }}>
+                <span style={{ color:tokens.cocoaMid }}>{b.label}</span>
+                <span style={{ fontWeight:500, color:b.color }}>
+                  {b.val === 0 ? "สมดุล" : b.val <= 4 ? "ปานกลาง" : "สูง"}
+                </span>
+              </div>
+              <div style={{ height:6, background:tokens.border, borderRadius:3, overflow:"hidden" }}>
+                <div style={{
+                  height:"100%",
+                  width:`${Math.min(100, (b.val/b.max)*100)}%`,
+                  background:b.color, borderRadius:3, transition:"width .6s ease",
+                }}/>
+              </div>
+            </div>
           ))}
         </div>
-        {/* Avatar */}
-        <div style={{
-          width: 42, height: 42, borderRadius: "50%",
-          background: tokens.lavenderLt,
-          border: `2.5px solid ${tokens.rose}`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 19,
-        }}>
-          🌸
-        </div>
-      </div>
-    </div>
-  )
-}
  
-/* PhaseBanner */
-function PhaseBanner({ phase, cycleDay, onPress }) {
-  const { tokens, t } = useApp()
-  return (
-    <div
-      className="fade-up"
-      onClick={onPress}
-      style={{
-        margin: "14px 16px 0",
-        borderRadius: 22,
-        padding: "18px 20px 16px",
-        background: phase.color,
-        color: "white",
-        position: "relative",
-        overflow: "hidden",
-        cursor: "pointer",
-        transition: "transform .15s",
-      }}
-      onMouseDown={e => e.currentTarget.style.transform = "scale(.99)"}
-      onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}
-    >
-      {/* Decorative circles */}
-      <div style={{
-        position: "absolute", top: -60, right: -40,
-        width: 160, height: 160, borderRadius: "50%",
-        background: "rgba(255,255,255,.09)",
-        pointerEvents: "none",
-      }} />
-      <div style={{
-        position: "absolute", bottom: -30, left: 10,
-        width: 90, height: 90, borderRadius: "50%",
-        background: "rgba(255,255,255,.07)",
-        pointerEvents: "none",
-      }} />
-      <div style={{ fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", opacity: .8, marginBottom: 4 }}>
-        {t("home.phase_today")}
-      </div>
-      <div style={{
-        fontFamily: "'Playfair Display', serif",
-        fontSize: 24, marginBottom: 5,
-      }}>
-        {phase.emoji} {phase.label}
-      </div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, opacity: .85, marginBottom: 12 }}>
-        {phase.desc.split(" ").slice(0, 8).join(" ")}…
-      </div>
-      <span style={{
-        display: "inline-block",
-        background: "rgba(255,255,255,.2)",
-        borderRadius: 999,
-        padding: "4px 12px",
-        fontSize: 11, fontWeight: 500,
-        backdropFilter: "blur(4px)",
-      }}>
-        {t("home.cycle_day")} {cycleDay} {t("home.cycle_of")}
-      </span>
-    </div>
-  )
-}
- 
-/* StatsStrip */
-function StatsStrip({ totalCal, targetCal, weight }) {
-  const { tokens, t } = useApp()
- 
-  const dayScore = Math.min(100, Math.max(0,
-    Math.round(100 - Math.abs(totalCal - targetCal) / targetCal * 60)
-  ))
- 
-  const stats = [
-    { value: totalCal.toLocaleString(), label: t("home.stats_cal") },
-    { value: weight.toFixed(1), label: t("home.stats_weight"), unit: "" },
-    { value: dayScore, label: t("home.stats_score"), accent: tokens.sageDk },
-  ]
- 
-  return (
-    <div className="fade-up" style={{
-      display: "grid", gridTemplateColumns: "repeat(3,1fr)",
-      gap: 8, padding: "10px 16px 0",
-    }}>
-      {stats.map((s, i) => (
-        <div key={i} style={{
-          background: tokens.creamSoft,
-          border: `1px solid ${tokens.borderLt}`,
-          borderRadius: 16,
-          padding: "11px 10px",
-          textAlign: "center",
-        }}>
-          <div style={{
-            fontSize: 19, fontWeight: 500,
-            color: s.accent ?? tokens.cocoa,
-            lineHeight: 1.1,
-          }}>
-            {s.value}
-            {s.unit !== undefined && <span style={{ fontSize: 11, color: tokens.stone }}>{s.unit}</span>}
+        {/* Focus + Avoid */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
+          <div style={{ background:tokens.sageLt, border:`1px solid rgba(126,148,132,.3)`,
+            borderRadius:16, padding:"12px" }}>
+            <div style={{ fontSize:11, fontWeight:500, color:tokens.sageDk,
+              marginBottom:8, letterSpacing:".04em" }}>✓ โฟกัส</div>
+            {result.focus.map(f => (
+              <div key={f} style={{ fontSize:11, color:tokens.sageDk,
+                marginBottom:4, lineHeight:1.4 }}>· {f}</div>
+            ))}
           </div>
-          <div style={{ fontSize: 10, color: tokens.stone, marginTop: 3 }}>{s.label}</div>
+          <div style={{ background:tokens.roseLt, border:`1px solid rgba(212,184,192,.3)`,
+            borderRadius:16, padding:"12px" }}>
+            <div style={{ fontSize:11, fontWeight:500, color:"#8B4050",
+              marginBottom:8, letterSpacing:".04em" }}>✕ เลี่ยง</div>
+            {result.avoid.map(f => (
+              <div key={f} style={{ fontSize:11, color:"#8B4050",
+                marginBottom:4, lineHeight:1.4 }}>· {f}</div>
+            ))}
+          </div>
         </div>
-      ))}
-    </div>
-  )
-}
  
-/* InsightBand */
-function InsightBand({ phase }) {
-  const { tokens, lang } = useApp()
+        {/* Top foods */}
+        <div style={{ background:tokens.creamSoft, border:`1px solid ${tokens.borderLt}`,
+          borderRadius:20, padding:"14px 16px", marginBottom:12 }}>
+          <div style={{ fontSize:12, fontWeight:500, color:tokens.cocoa, marginBottom:10 }}>
+            อาหารแนะนำสำหรับคุณ
+          </div>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+            {result.eat.map(f => (
+              <span key={f} style={{ fontSize:12, padding:"5px 12px",
+                borderRadius:999, background:result.colorLt, color:result.textClr,
+                fontWeight:500 }}>{f}</span>
+            ))}
+          </div>
+        </div>
  
-  const insights = {
-    th: {
-      ovulation: "กินโปรตีนสูง + ผักใบเขียว ช่วยขับ Estrogen ส่วนเกิน แขนจะดูกระชับใน 1 สัปดาห์",
-      follicular: "ช่วงนี้ร่างกายไวต่อ Insulin มาก หลีกเลี่ยงน้ำตาลเพื่อ maximize การลดไขมัน",
-      luteal: "อยากหวานคือสัญญาณ Progesterone สูง ลองกล้วยหรือดาร์กช็อกแทนขนมหวาน",
-      menstrual: "เพิ่มธาตุเหล็กจากผักโขมและตับ เพื่อชดเชยที่ร่างกายสูญเสียไป",
-    },
-    en: {
-      ovulation: "High protein + leafy greens help flush excess Estrogen — you'll feel leaner in 1 week.",
-      follicular: "Your body is highly insulin-sensitive now. Cut sugar to maximize fat loss.",
-      luteal: "Sweet cravings signal high Progesterone. Try banana or dark chocolate instead.",
-      menstrual: "Boost iron from spinach and liver to replace what your body loses.",
-    },
-  }
- 
-  return (
-    <div className="fade-up" style={{
-      margin: "10px 16px 0",
-      background: tokens.lavenderLt,
-      border: `1px solid rgba(187,168,196,.3)`,
-      borderRadius: 16,
-      padding: "12px 14px",
-      display: "flex", gap: 10, alignItems: "flex-start",
-    }}>
-      <div style={{
-        width: 7, height: 7, borderRadius: "50%",
-        background: tokens.lavenderDk,
-        flexShrink: 0, marginTop: 5,
-      }} />
-      <div style={{ fontSize: 12, color: tokens.lavenderDk, lineHeight: 1.65 }}>
-        {(insights[lang] ?? insights.th)[phase.key]}
-      </div>
-    </div>
-  )
-}
- 
-/* SectionRow */
-function SectionRow({ title, action, onAction }) {
-  const { tokens } = useApp()
-  return (
-    <div className="fade-up" style={{
-      display: "flex", justifyContent: "space-between", alignItems: "center",
-      padding: "13px 16px 7px",
-    }}>
-      <span style={{ fontSize: 14, fontWeight: 500, color: tokens.cocoa }}>{title}</span>
-      {action && (
-        <span
-          onClick={onAction}
-          style={{ fontSize: 12, color: tokens.sage, cursor: "pointer" }}
-        >
-          {action}
-        </span>
-      )}
-    </div>
-  )
-}
- 
-/* FoodRail */
-function FoodRail({ foods, pickedNames, onPick }) {
-  const { tokens, lang } = useApp()
-  return (
-    <div className="fade-up" style={{
-      display: "flex", gap: 8,
-      padding: "0 16px 4px",
-      overflowX: "auto",
-      msOverflowStyle: "none", scrollbarWidth: "none",
-    }}>
-      {foods.map(f => {
-        const picked = pickedNames.includes(f.name)
-        return (
+        {/* 7-day plan toggle */}
+        <div style={{ background:tokens.lavenderLt, border:`1px solid rgba(187,168,196,.3)`,
+          borderRadius:20, overflow:"hidden", marginBottom:16 }}>
           <div
-            key={f.name}
-            onClick={() => onPick(f)}
-            style={{
-              flexShrink: 0, minWidth: 82,
-              background: picked ? tokens.sageLt : tokens.creamSoft,
-              border: `1px solid ${picked ? tokens.sage : tokens.border}`,
-              borderRadius: 16,
-              padding: "10px 10px 8px",
-              cursor: "pointer",
-              textAlign: "center",
-              transition: "all .18s",
-              transform: "scale(1)",
-            }}
-            onMouseDown={e => e.currentTarget.style.transform = "scale(.95)"}
-            onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}
-          >
-            <div style={{ fontSize: 24, marginBottom: 5 }}>{f.emoji}</div>
-            <div style={{ fontSize: 11, fontWeight: 500, color: tokens.cocoa }}>{lang==="en" ? (f.nameEn??f.name) : f.name}</div>
-            <div style={{ fontSize: 10, color: tokens.sage, marginTop: 2 }}>{f.cal} kcal</div>
+            onClick={() => setShowPlan(v=>!v)}
+            style={{ padding:"14px 16px", display:"flex", justifyContent:"space-between",
+              alignItems:"center", cursor:"pointer" }}>
+            <span style={{ fontSize:13, fontWeight:500, color:tokens.lavenderDk }}>
+              📅 แผนอาหาร 7 วัน
+            </span>
+            <span style={{ fontSize:13, color:tokens.lavenderDk,
+              transform:showPlan?"rotate(180deg)":"rotate(0deg)",
+              transition:"transform .25s" }}>▾</span>
           </div>
-        )
-      })}
-    </div>
-  )
-}
- 
-/* FoodLogList */
-function FoodLogList({ log }) {
-  const { tokens } = useApp()
-  return (
-    <div className="fade-up" style={{
-      padding: "0 16px",
-      display: "flex", flexDirection: "column", gap: 7,
-    }}>
-      {log.map(item => (
-        <div key={item.id} style={{
-          background: tokens.creamSoft,
-          border: `1px solid ${tokens.borderLt}`,
-          borderRadius: 16,
-          padding: "11px 13px",
-          display: "flex", alignItems: "center", gap: 11,
-        }}>
-          <div style={{
-            width: 36, height: 36,
-            background: tokens.cream,
-            borderRadius: 10,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 17, flexShrink: 0,
-          }}>
-            {item.emoji}
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 500, color: tokens.cocoa }}>{item.name}</div>
-            <div style={{ fontSize: 10, color: tokens.stone, marginTop: 2 }}>
-              {item.time}{item.meal ? ` · ${item.meal}` : ""}
+          {showPlan && (
+            <div style={{ borderTop:`1px solid rgba(187,168,196,.3)` }}>
+              {plan.map((p, i) => (
+                <div key={p.day} style={{
+                  padding:"12px 16px",
+                  borderBottom: i < plan.length-1 ? `1px solid rgba(187,168,196,.2)` : "none",
+                }}>
+                  <div style={{ fontSize:11, fontWeight:600, color:tokens.lavenderDk,
+                    marginBottom:6 }}>{p.day}</div>
+                  <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+                    {[
+                      { label:"🌅 เช้า",  val:p.breakfast },
+                      { label:"☀️ กลางวัน", val:p.lunch    },
+                      { label:"🌙 เย็น",  val:p.dinner    },
+                    ].map(m => (
+                      <div key={m.label} style={{ fontSize:11, color:tokens.cocoaMid }}>
+                        <span style={{ fontWeight:500, color:tokens.stone }}>{m.label}: </span>
+                        {m.val}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-          <div style={{ fontSize: 12, fontWeight: 500, color: tokens.sageDk, flexShrink: 0 }}>
-            {item.cal} kcal
-          </div>
+          )}
         </div>
-      ))}
-    </div>
-  )
-}
  
-/* AddFoodButton */
-function AddFoodButton({ onPress }) {
-  const { tokens, t } = useApp()
-  return (
-    <span
-      onClick={onPress}
-      style={{
-        fontSize: 11, cursor: "pointer",
-        background: tokens.creamSoft,
-        padding: "5px 11px",
-        borderRadius: 999,
-        border: `1px solid ${tokens.border}`,
-        color: tokens.cocoa,
-      }}
-    >
-      {t("home.add")}
-    </span>
-  )
-}
- 
- 
-/* MoodBanner */
-function MoodBanner({ onPress }) {
-  const { tokens, t } = useApp()
-  let todayMood = null
-  try {
-    const logs = JSON.parse(localStorage.getItem("he_moodlogs") ?? "[]")
-    const today = new Date()
-    const tk = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`
-    todayMood = logs.find(l => l.dateKey === tk)
-  } catch {}
- 
-  const MOODS = [
-    { id:"great", emoji:"🤩" }, { id:"good", emoji:"😊" },
-    { id:"neutral", emoji:"😐" }, { id:"tired", emoji:"😔" },
-    { id:"bad", emoji:"😞" },
-  ]
-  const moodEmoji = MOODS.find(m => m.id === todayMood?.mood)?.emoji
- 
-  return (
-    <div onClick={onPress} className="fade-up" style={{
-      margin:"10px 16px 0",
-      background: todayMood ? tokens.sageLt : tokens.lavenderLt,
-      border:`1px solid ${todayMood ? "rgba(126,148,132,.3)" : "rgba(187,168,196,.3)"}`,
-      borderRadius:16, padding:"12px 14px",
-      display:"flex", alignItems:"center", justifyContent:"space-between",
-      cursor:"pointer", transition:"all .15s",
-    }}>
-      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-        <span style={{ fontSize:22 }}>{moodEmoji ?? "😊"}</span>
-        <div>
-          <div style={{ fontSize:13, fontWeight:500,
-            color: todayMood ? tokens.sageDk : tokens.lavenderDk }}>
-            {todayMood ? t("home.mood_logged") : t("home.mood_cta")}
-          </div>
-          <div style={{ fontSize:10, color:tokens.stone, marginTop:2 }}>
-            {todayMood ? t("home.mood_tap") : t("home.mood_sub")}
-          </div>
-        </div>
       </div>
-      <span style={{ fontSize:16, color:tokens.stone }}>›</span>
-    </div>
-  )
-}
  
-/* TodayMealCard */
-function TodayMealCard({ hormoneType }) {
-  const { tokens, t, lang } = useApp()
-  const meal = getTodayMeal(hormoneType)
-  if (!meal) return null
- 
-  const days_th = ["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์"]
-  const days_en = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
-  const today = lang === "en" ? days_en[new Date().getDay()] : days_th[new Date().getDay()]
- 
-  return (
-    <div className="fade-up" style={{
-      margin:"10px 16px 0",
-      background:tokens.creamSoft,
-      border:`1px solid ${tokens.borderLt}`,
-      borderRadius:20, padding:"14px 16px",
-    }}>
-      <div style={{ display:"flex", justifyContent:"space-between",
-        alignItems:"center", marginBottom:10 }}>
-        <div style={{ fontSize:13, fontWeight:500, color:tokens.cocoa }}>
-          {t("home.meal_plan")}{lang==="en" ? " " : ""}{today}
+      {/* CTA */}
+      <div style={{ padding:"12px 20px 20px", background:tokens.creamSoft,
+        borderTop:`1px solid ${tokens.borderLt}`, flexShrink:0 }}>
+        <button onClick={() => onFinish(result.phase)} style={{
+          width:"100%", padding:"15px",
+          background:tokens.cocoa, color:tokens.cream,
+          border:"none", borderRadius:16,
+          fontSize:15, fontWeight:600,
+          fontFamily:"'DM Sans',sans-serif",
+          cursor:"pointer",
+        }}
+          onMouseDown={e=>e.currentTarget.style.opacity=".8"}
+          onMouseUp={e=>e.currentTarget.style.opacity="1"}
+        >
+          {lang==="en" ? "Start HormoneEats →" : "เริ่มใช้ HormoneEats →"}
+        </button>
+        <div style={{ textAlign:"center", fontSize:11, color:tokens.stone, marginTop:8 }}>
+          {lang==="en" ? "Results saved to your profile" : "ผลจะถูกบันทึกไว้ในโปรไฟล์ของคุณ"}
         </div>
-      </div>
-      <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
-        {[
-          { icon:"🌅", label:t("home.breakfast"), val:lang==="en" ? (meal.bEn??meal.b) : meal.b },
-          { icon:"☀️", label:t("home.lunch"),     val:lang==="en" ? (meal.lEn??meal.l) : meal.l },
-          { icon:"🌙", label:t("home.dinner"),     val:lang==="en" ? (meal.dEn??meal.d) : meal.d },
-        ].map(m => (
-          <div key={m.label} style={{
-            display:"flex", gap:10, alignItems:"flex-start",
-            padding:"9px 12px",
-            background:tokens.cream,
-            borderRadius:12,
-          }}>
-            <span style={{ fontSize:16, flexShrink:0 }}>{m.icon}</span>
-            <div style={{ flex:1 }}>
-              <div style={{ fontSize:10, fontWeight:500, color:tokens.stone,
-                letterSpacing:".04em", textTransform:"uppercase", marginBottom:3 }}>
-                {m.label}
-              </div>
-              <div style={{ fontSize:12, color:tokens.cocoaMid, lineHeight:1.45 }}>
-                {m.val}
-              </div>
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   )
 }
  
 /* ═══════════════════════════════════════════════════
-   HOME SCREEN — main export
+   HORMONE QUIZ — main export
 ═══════════════════════════════════════════════════ */
-export default function Home() {
-  const {
-    user, totalCal, todayEntries,
-    currentPhase, navTo, toggleCartItem, cartItems, t,
-  } = useApp()
+export default function HormoneQuiz({ onComplete }) {
+  const { tokens } = useApp()
+  const [lang, setLang] = useState("th")
  
-  const suggestedFoods = PHASE_FOODS[user.currentPhase] ?? PHASE_FOODS.ovulation
-  const pickedNames = cartItems.map(f => f.name)
+  const [step,     setStep    ] = useState("intro") // intro | quiz | result
+  const [qIndex,   setQIndex  ] = useState(0)
+  const [answers,  setAnswers ] = useState({})       // { qId: optionIndex }
+  const [scores,   setScores  ] = useState({ estrogen:0, progesterone:0, cortisol:0 })
+  const [hormoneType, setHormoneType] = useState(null)
  
-  function handlePickFood(food) {
-    toggleCartItem(food)
+  const activeQs = lang==="en" ? QUESTIONS_EN : QUESTIONS
+  const currentQ = activeQs[qIndex]
+  const selected = answers[currentQ?.id]
+ 
+  function handleSelect(optionIndex) {
+    setAnswers(a => ({ ...a, [currentQ.id]: optionIndex }))
   }
  
+  function handleNext() {
+    /* save scores */
+    const opt = currentQ.options[selected]
+    const newScores = {
+      estrogen:     scores.estrogen     + (opt.scores.estrogen     ?? 0),
+      progesterone: scores.progesterone + (opt.scores.progesterone ?? 0),
+      cortisol:     scores.cortisol     + (opt.scores.cortisol     ?? 0),
+    }
+    setScores(newScores)
+ 
+    if (qIndex < activeQs.length - 1) {
+      setQIndex(i => i + 1)
+    } else {
+      /* calculate result */
+      const type = calcHormoneType(newScores)
+      setHormoneType(type)
+      setStep("result")
+    }
+  }
+ 
+  function handleFinish(phase) {
+    onComplete({ hormoneType, scores, recommendedPhase: phase })
+  }
+ 
+  /* ── BG color per step ── */
+  const bgColor = step === "intro" ? tokens.lavenderLt
+    : step === "quiz" ? tokens.creamSoft
+    : tokens.cream
+ 
   return (
-    <ScreenWrapper>
-      {/* ── Header ── */}
-      <TopBar user={user} />
+    <div style={{
+      position:"absolute", inset:0,
+      background: bgColor,
+      display:"flex", flexDirection:"column",
+      transition:"background .4s",
+    }}>
  
-      {/* ── Scrollable body ── */}
-      <div className="scroll-body" style={{ flex: 1, paddingBottom: 90 }}>
+      {/* ── INTRO ── */}
+      {step === "intro" && (
+        <div style={{ flex:1, display:"flex", flexDirection:"column",
+          alignItems:"center", justifyContent:"center",
+          padding:"40px 28px", textAlign:"center" }}>
+          {/* Lang toggle */}
+          <div style={{ display:"flex", gap:0, background:tokens.cream, border:`1px solid ${tokens.border}`, borderRadius:999, overflow:"hidden", marginBottom:20 }}>
+            {["th","en"].map(l => (
+              <button key={l} onClick={() => setLang(l)} style={{
+                padding:"6px 16px",
+                background: lang===l ? tokens.cocoa : "transparent",
+                color:      lang===l ? tokens.cream  : tokens.stone,
+                border:"none", cursor:"pointer",
+                fontSize:12, fontWeight:500,
+                fontFamily:"'DM Sans',sans-serif",
+                transition:"all .2s",
+              }}>
+                {l==="th" ? "🇹🇭 TH" : "🇬🇧 EN"}
+              </button>
+            ))}
+          </div>
+          <div style={{ fontSize:64, marginBottom:20 }}>🌿</div>
+          <div style={{ fontFamily:"'Playfair Display',serif",
+            fontSize:28, color:tokens.cocoa, marginBottom:12, lineHeight:1.3 }}>
+            Hormone Balance Quiz
+          </div>
+          <div style={{ fontSize:14, color:tokens.stone, lineHeight:1.75,
+            marginBottom:32, maxWidth:280 }}>
+            {lang==="en"
+              ? `Answer ${QUESTIONS_EN.length} questions to discover your hormone type and get a personalized 7-day meal plan.`
+              : `ตอบ ${QUESTIONS.length} คำถาม เพื่อค้นหาประเภทฮอร์โมนของคุณ และรับแผนอาหาร 7 วันที่เหมาะกับร่างกาย`
+            }
+          </div>
  
-        {/* Phase Banner */}
-        <PhaseBanner
-          phase={currentPhase}
-          cycleDay={user.cycleDay}
-          onPress={() => navTo("phases")}
+          {/* Principles preview */}
+          <div style={{ width:"100%", background:tokens.creamSoft,
+            border:`1px solid ${tokens.borderLt}`, borderRadius:20,
+            padding:"14px 16px", marginBottom:28, textAlign:"left" }}>
+            <div style={{ fontSize:11, fontWeight:500, color:tokens.stone,
+              letterSpacing:".06em", marginBottom:10 }}>
+              {lang==="en" ? "Hormone Balance Diet Principles" : "หลักการ Hormone Balance Diet"}
+            </div>
+            {(lang==="en" ? [
+              { icon:"🥩", text:"Adequate protein → builds hormones, stabilizes blood sugar" },
+              { icon:"🥦", text:"High fiber → supports gut health, flushes excess hormones" },
+              { icon:"🥑", text:"Healthy fats → support sex hormone production" },
+              { icon:"🚫", text:"Avoid sugar → reduces insulin resistance" },
+              { icon:"🌱", text:"Gut health → balanced gut = balanced hormones" },
+            ] : [
+              { icon:"🥩", text:"โปรตีนเพียงพอ → สร้างฮอร์โมน, รักษาน้ำตาลในเลือด" },
+              { icon:"🥦", text:"ไฟเบอร์สูง → ช่วยลำไส้, ลดฮอร์โมนส่วนเกิน" },
+              { icon:"🥑", text:"ไขมันดี → สนับสนุนการผลิตฮอร์โมนเพศ" },
+              { icon:"🚫", text:"หลีกเลี่ยงน้ำตาล → ลดดื้อ Insulin" },
+              { icon:"🌱", text:"ดูแลลำไส้ → ลำไส้ดี = ฮอร์โมนสมดุล" },
+            ]).map(p => (
+              <div key={p.text} style={{ display:"flex", gap:8, marginBottom:6,
+                alignItems:"flex-start" }}>
+                <span style={{ fontSize:14, flexShrink:0 }}>{p.icon}</span>
+                <span style={{ fontSize:11, color:tokens.cocoaMid, lineHeight:1.5 }}>{p.text}</span>
+              </div>
+            ))}
+          </div>
+ 
+          <button onClick={() => setStep("quiz")} style={{
+            width:"100%", padding:"15px",
+            background:tokens.cocoa, color:tokens.cream,
+            border:"none", borderRadius:16,
+            fontSize:15, fontWeight:600,
+            fontFamily:"'DM Sans',sans-serif", cursor:"pointer",
+          }}
+            onMouseDown={e=>e.currentTarget.style.opacity=".8"}
+            onMouseUp={e=>e.currentTarget.style.opacity="1"}
+          >
+            {lang==="en" ? "Start Quiz →" : "เริ่มทำ Quiz →"}
+          </button>
+        </div>
+      )}
+ 
+      {/* ── QUIZ ── */}
+      {step === "quiz" && (
+        <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
+          {/* Header */}
+          <div style={{
+            background: tokens.lavenderDk,
+            padding:"16px 20px 14px", flexShrink:0,
+          }}>
+            <div style={{ display:"flex", justifyContent:"space-between",
+              alignItems:"center", marginBottom:10 }}>
+              <span style={{ fontSize:12, color:"rgba(255,255,255,.8)" }}>
+                {qIndex + 1} / {QUESTIONS.length}
+              </span>
+              <span style={{ fontSize:11, color:"rgba(255,255,255,.7)",
+                letterSpacing:".06em" }}>
+                HORMONE QUIZ
+              </span>
+            </div>
+            <ProgressBar current={qIndex+1} total={QUESTIONS.length} />
+          </div>
+ 
+          {/* Question */}
+          <div className="scroll-body" style={{ flex:1, padding:"16px" }}>
+            <QuestionCard
+              q={currentQ}
+              qIndex={qIndex}
+              total={QUESTIONS.length}
+              selected={selected}
+              onSelect={handleSelect}
+              tokens={tokens}
+            />
+          </div>
+ 
+          {/* Next button */}
+          <div style={{ padding:"10px 16px 16px",
+            background:tokens.creamSoft,
+            borderTop:`1px solid ${tokens.borderLt}`, flexShrink:0 }}>
+            <button
+              onClick={handleNext}
+              disabled={selected === undefined}
+              style={{
+                width:"100%", padding:"14px",
+                background: selected !== undefined ? tokens.cocoa : tokens.border,
+                color: selected !== undefined ? tokens.cream : tokens.stone,
+                border:"none", borderRadius:16,
+                fontSize:15, fontWeight:600,
+                fontFamily:"'DM Sans',sans-serif",
+                cursor: selected !== undefined ? "pointer" : "default",
+                transition:"all .2s",
+              }}
+              onMouseDown={e=>selected!==undefined&&(e.currentTarget.style.opacity=".8")}
+              onMouseUp={e=>e.currentTarget.style.opacity="1"}
+            >
+              {lang==="en" ? (qIndex < activeQs.length-1 ? "Next →" : "See Results →") : (qIndex < activeQs.length-1 ? "ถัดไป →" : "ดูผลลัพธ์ →")}
+            </button>
+          </div>
+        </div>
+      )}
+ 
+      {/* ── RESULT ── */}
+      {step === "result" && hormoneType && (
+        <ResultScreen
+          hormoneType={hormoneType}
+          scores={scores}
+          onFinish={handleFinish}
+          tokens={tokens}
+          lang={lang}
         />
+      )}
  
-        {/* Stats */}
-        <StatsStrip
-          totalCal={totalCal}
-          targetCal={user.targetCal}
-          weight={user.weight}
-        />
- 
-        {/* Insight */}
-        <InsightBand phase={currentPhase} />
- 
-        {/* Mood Banner */}
-        <MoodBanner onPress={() => navTo("mood")} />
- 
-        {/* Today Meal Plan */}
-        <TodayMealCard hormoneType={user.hormoneType ?? "balanced"} />
- 
-        {/* Food suggestions */}
-        <SectionRow
-          title={t("home.suggest_today")}
-          action={t("home.see_all")}
-          onAction={() => navTo("tracker")}
-        />
-        <FoodRail
-          foods={suggestedFoods}
-          pickedNames={pickedNames}
-          onPick={handlePickFood}
-        />
- 
-        {/* Food log */}
-        <SectionRow
-          title={t("home.log_today")}
-          action={<AddFoodButton onPress={() => navTo("tracker")} />}
-        />
-        <FoodLogList log={todayEntries ?? []} />
- 
-        {/* Bottom padding */}
-        <div style={{ height: 16 }} />
-      </div>
-    </ScreenWrapper>
+    </div>
   )
 }
