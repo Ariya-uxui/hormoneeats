@@ -523,76 +523,234 @@ function TodayMealCard({ hormoneType }) {
     </div>
   )
 }
+
+/* PhaseDetailSheet */
+function PhaseDetailSheet({ phase, onClose, onQuiz }) {
+  const { tokens, lang, t } = useApp()
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "absolute", inset: 0, zIndex: 400,
+        background: "rgba(61,46,42,.5)",
+        display: "flex", alignItems: "flex-end",
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: "100%",
+          background: tokens.creamSoft,
+          borderRadius: "24px 24px 0 0",
+          maxHeight: "78%",
+          display: "flex", flexDirection: "column",
+          animation: "slideUp .28s ease both",
+          marginBottom: "82px",
+        }}
+      >
+        {/* Handle */}
+        <div style={{
+          width: 36, height: 4, borderRadius: 2,
+          background: tokens.border,
+          margin: "12px auto 0",
+          flexShrink: 0,
+        }} />
+
+        {/* Header */}
+        <div style={{
+          background: phase.color,
+          borderRadius: "20px 20px 0 0",
+          padding: "18px 20px 16px",
+          margin: "10px 16px 0",
+          color: "white",
+          position: "relative",
+          overflow: "hidden",
+          flexShrink: 0,
+        }}>
+          <div style={{
+            position: "absolute", top: -40, right: -30,
+            width: 110, height: 110, borderRadius: "50%",
+            background: "rgba(255,255,255,.1)", pointerEvents: "none",
+          }} />
+          <div style={{ fontSize: 32, marginBottom: 6 }}>{phase.emoji}</div>
+          <div style={{
+            fontFamily: "'Playfair Display',serif",
+            fontSize: 22, marginBottom: 4,
+          }}>
+            {phase.label}
+          </div>
+          <div style={{ fontSize: 11, opacity: .8 }}>
+            {phase.days}{phase.sub ? ` · ${phase.sub}` : ""}
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="scroll-body" style={{ flex: 1, padding: "14px 16px 0" }}>
+          {/* Description */}
+          <div style={{
+            fontSize: 13, color: tokens.cocoaMid,
+            lineHeight: 1.7, marginBottom: 14,
+          }}>
+            {phase.desc}
+          </div>
+
+          {/* Eat */}
+          <div style={{ marginBottom: 12 }}>
+            <div style={{
+              fontSize: 11, fontWeight: 500, color: tokens.sageDk,
+              letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 8,
+            }}>
+              ✓ {lang === "en" ? "Eat More" : "กินเพิ่ม"}
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {phase.eat.map(f => (
+                <span key={f} style={{
+                  fontSize: 12, padding: "5px 12px", borderRadius: 999,
+                  background: tokens.sageLt, color: tokens.sageDk, fontWeight: 500,
+                }}>
+                  {f}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Avoid */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{
+              fontSize: 11, fontWeight: 500, color: "#8B4050",
+              letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 8,
+            }}>
+              ✕ {lang === "en" ? "Limit" : "เลี่ยง"}
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {phase.avoid.map(f => (
+                <span key={f} style={{
+                  fontSize: 12, padding: "5px 12px", borderRadius: 999,
+                  background: tokens.roseLt, color: "#8B4050", fontWeight: 500,
+                }}>
+                  {f}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Calorie range */}
+          <div style={{
+            background: tokens.lavenderLt,
+            border: "1px solid rgba(187,168,196,.3)",
+            borderRadius: 14, padding: "10px 14px",
+            display: "flex", justifyContent: "space-between",
+            alignItems: "center", marginBottom: 16,
+          }}>
+            <span style={{ fontSize: 12, color: tokens.lavenderDk }}>
+              {lang === "en" ? "Recommended calories" : "แคลอรี่แนะนำ"}
+            </span>
+            <span style={{ fontSize: 13, fontWeight: 500, color: tokens.lavenderDk }}>
+              {phase.calRange} kcal/day
+            </span>
+          </div>
+        </div>
+
+        {/* Footer — Quiz button */}
+        <div style={{
+          padding: "12px 16px 16px",
+          borderTop: `1px solid ${tokens.borderLt}`,
+          background: tokens.creamSoft,
+          flexShrink: 0,
+        }}>
+          <button
+            onClick={onQuiz}
+            style={{
+              width: "100%", padding: "14px",
+              background: tokens.cocoa, color: tokens.cream,
+              border: "none", borderRadius: 16,
+              fontSize: 14, fontWeight: 600,
+              fontFamily: "'DM Sans',sans-serif",
+              cursor: "pointer",
+            }}
+            onMouseDown={e => e.currentTarget.style.opacity = ".8"}
+            onMouseUp={e => e.currentTarget.style.opacity = "1"}
+          >
+            🌿 {lang === "en" ? "Retake Hormone Quiz" : "ทำ Hormone Quiz ใหม่"}
+          </button>
+          <div style={{
+            textAlign: "center", fontSize: 11, color: tokens.stone, marginTop: 8,
+          }}>
+            {lang === "en"
+              ? "Update your profile with a new quiz result"
+              : "อัปเดตโปรไฟล์ฮอร์โมนของคุณ"}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
  
 /* ═══════════════════════════════════════════════════
    HOME SCREEN — main export
 ═══════════════════════════════════════════════════ */
 export default function Home() {
-  const {
+   const {
     user, totalCal, todayEntries,
     currentPhase, navTo, toggleCartItem, cartItems, t,
   } = useApp()
- 
+
+  // เพิ่ม state นี้
+  const [showPhaseSheet, setShowPhaseSheet] = React.useState(false)
+
   const suggestedFoods = PHASE_FOODS[user.currentPhase] ?? PHASE_FOODS.ovulation
   const pickedNames = cartItems.map(f => f.name)
- 
+
   function handlePickFood(food) {
     toggleCartItem(food)
   }
- 
+
   return (
     <ScreenWrapper>
-      {/* ── Header ── */}
       <TopBar user={user} />
- 
-      {/* ── Scrollable body ── */}
+
       <div className="scroll-body" style={{ flex: 1, paddingBottom: 90 }}>
- 
-        {/* Phase Banner */}
+
+        {/* Phase Banner — แก้ onPress */}
         <PhaseBanner
           phase={currentPhase}
           cycleDay={user.cycleDay}
-          onPress={() => navTo("phases")}
+          onPress={() => setShowPhaseSheet(true)}
         />
- 
-        {/* Stats */}
-        <StatsStrip
-          totalCal={totalCal}
-          targetCal={user.targetCal}
-          weight={user.weight}
-        />
- 
-        {/* Insight */}
+
+        <StatsStrip totalCal={totalCal} targetCal={user.targetCal} weight={user.weight} />
         <InsightBand phase={currentPhase} />
- 
-        {/* Mood Banner */}
         <MoodBanner onPress={() => navTo("mood")} />
- 
-        {/* Today Meal Plan */}
         <TodayMealCard hormoneType={user.hormoneType ?? "balanced"} />
- 
-        {/* Food suggestions */}
+
         <SectionRow
           title={t("home.suggest_today")}
           action={t("home.see_all")}
           onAction={() => navTo("tracker")}
         />
-        <FoodRail
-          foods={suggestedFoods}
-          pickedNames={pickedNames}
-          onPick={handlePickFood}
-        />
- 
-        {/* Food log */}
+        <FoodRail foods={suggestedFoods} pickedNames={pickedNames} onPick={handlePickFood} />
+
         <SectionRow
           title={t("home.log_today")}
           action={<AddFoodButton onPress={() => navTo("tracker")} />}
         />
         <FoodLogList log={todayEntries ?? []} />
- 
-        {/* Bottom padding */}
+
         <div style={{ height: 16 }} />
       </div>
+
+      {/* Phase Detail Sheet */}
+      {showPhaseSheet && (
+        <PhaseDetailSheet
+          phase={currentPhase}
+          onClose={() => setShowPhaseSheet(false)}
+          onQuiz={() => {
+            setShowPhaseSheet(false)
+            navTo("quiz")
+          }}
+        />
+      )}
     </ScreenWrapper>
   )
 }
