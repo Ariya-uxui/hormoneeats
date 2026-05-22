@@ -1,256 +1,112 @@
-# 🌿 HormoneEats
-
-> กินตามฮอร์โมน ลดน้ำหนักยั่งยืน สุขภาพดีจากข้างใน
-
-React + Vite mobile app ที่ช่วยผู้ใช้กินอาหารให้สอดคล้องกับรอบฮอร์โมน 4 เฟส เพื่อลดน้ำหนักแบบยั่งยืนและสมดุลฮอร์โมน
-
+# HormoneEats 🌿
+ 
+A bilingual (TH/EN) nutrition PWA that helps women eat in sync with their menstrual cycle — built with React + Vite, designed in Figma.
+ 
+**Live demo:** https://hormoneeats.vercel.app  
+**Figma file:** [View design file](#)  
+**Repo:** https://github.com/Ariya-uxui/hormoneeats
+ 
 ---
-
-## 🚀 เริ่มต้นใช้งาน
-
+ 
+## Why I built this
+ 
+Most nutrition apps treat every day the same. But hormones shift dramatically across a 28-day cycle — affecting metabolism, hunger, energy, and cravings. I wanted to build something that reflects that reality.
+ 
+The challenge wasn't just the UI. It was designing a system that could surface the right information at the right phase, without overwhelming the user.
+ 
+---
+ 
+## Design → Implementation decisions
+ 
+### 1. Phase-aware architecture
+Each of the 4 hormone phases (Follicular, Ovulation, Luteal, Menstrual) has its own color token, calorie range, food recommendations, and avoid list — all defined in a single `PHASES` object in `App.jsx`.
+ 
+**Why:** Keeping phase data co-located with design tokens meant the UI could stay in sync with content without a CMS. Any phase update touches one place.
+ 
+### 2. Single source of truth for food diary
+Both the Tracker screen and the Food Calendar read/write to the same `diary` state — keyed by date (`YYYY-MM-DD`). Cart items sync to diary on toggle.
+ 
+**Why:** Early versions had separate state for tracker and calendar, which caused inconsistencies when the same meal appeared in both views. Merging them eliminated the sync problem entirely.
+ 
+### 3. Routing without React Router
+Navigation is managed with a single `screen` state string rather than React Router. `quiz` and `onboarding` are treated as separate states, not routes — so `BottomNav` never renders during those flows.
+ 
+**Why:** For a self-contained mobile PWA with a fixed screen structure, a router added complexity without benefit. The tradeoff is no deep linking — an acceptable limitation for this use case.
+ 
+**Bug I fixed:** An earlier version used `setTimeout(() => setScreen("onboarding"), 50)` after quiz completion, creating a race condition where `BottomNav` would flash during the transition. Removing the timeout and calling `setScreen` directly resolved it.
+ 
+### 4. Bilingual support (TH/EN)
+All UI strings are pulled through a `getT(lang)` helper from `translations.js`. Language preference persists in `localStorage`.
+ 
+**Why:** The primary users are Thai women, but I wanted the app to be usable by anyone. Centralizing strings also made it easy to audit missing translations.
+ 
+### 5. PWA setup
+Includes `manifest.json`, service worker, and iOS-compatible icons — installable on home screen with offline capability for core features.
+ 
+---
+ 
+## Tech stack
+ 
+| Layer | Choice | Reason |
+|---|---|---|
+| Framework | React + Vite | Fast HMR, familiar ecosystem |
+| Styling | Inline styles + design tokens | No build step for styles, tokens stay in JS |
+| State | useState + useLocalStorage hook | No server needed, data persists across sessions |
+| i18n | Custom `getT()` helper | Lightweight, no library overhead |
+| Deploy | Vercel | Zero-config, auto-deploy on push |
+| Design | Figma | Full component specs before implementation |
+ 
+---
+ 
+## Design tokens
+ 
+All colors, spacing references, and phase theming come from a `tokens` object — the single source for both Figma variables and React inline styles.
+ 
+```js
+tokens.lavender     // primary accent
+tokens.cream        // base background
+tokens.follicular   // phase color — Follicular
+tokens.ovulation    // phase color — Ovulation
+tokens.luteal       // phase color — Luteal
+tokens.menstrual    // phase color — Menstrual
+```
+ 
+---
+ 
+## Screens
+ 
+| Screen | Description |
+|---|---|
+| HormoneQuiz | Onboarding quiz that determines hormone type |
+| Home | Phase summary, daily cal target, quick actions |
+| Tracker | Food selection synced to diary |
+| Food Calendar | Daily diary view across dates |
+| Mood Tracker | Daily mood logging tied to cycle phase |
+| Weight | Weight history chart |
+| Profile | User settings, phase override |
+ 
+---
+ 
+## Local setup
+ 
 ```bash
-# 1. Clone หรือ copy โปรเจกต์
+git clone https://github.com/Ariya-uxui/hormoneeats
 cd hormoneeats
-
-# 2. ติดตั้ง dependencies
 npm install
-
-# 3. รัน dev server
 npm run dev
-# → เปิด http://localhost:3000
-
-# 4. Build สำหรับ production
-npm run build
-
-# 5. Preview build
-npm run preview
 ```
-
-**Node.js version:** 18+ แนะนำ
-
+ 
+Runs on `http://localhost:5173`
+ 
 ---
-
-## 📁 โครงสร้างไฟล์
-
-```
-hormoneeats/
-├── index.html                 ← HTML entry point
-├── vite.config.js             ← Vite config
-├── package.json               ← Dependencies
-└── src/
-    ├── main.jsx               ← React root mount
-    ├── App.jsx                ← Root component, Context, tokens, navigation
-    └── screens/
-        ├── Onboarding.jsx     ← 3-slide intro
-        ├── Home.jsx           ← Dashboard หลัก
-        ├── Phases.jsx         ← รอบฮอร์โมน 4 เฟส
-        ├── Tracker.jsx        ← คำนวณแคลอรี่ + food grid
-        ├── Weight.jsx         ← ติดตามน้ำหนัก + chart
-        └── Profile.jsx        ← โปรไฟล์ + settings
-```
-
+ 
+## What I'd improve next
+ 
+- **TypeScript** — prop types are currently implicit; migrating would catch bugs earlier
+- **Real cycle tracking API** — connect to Apple Health or Google Fit for actual cycle data instead of manual input
+- **Accessibility audit** — keyboard navigation and ARIA labels need a full pass
+- **Testing** — add Vitest unit tests for `toggleCartItem` and diary sync logic
 ---
-
-## 🎨 Design System — Palette D
-
-### Color Tokens
-
-| Token          | Hex       | Usage                     |
-|----------------|-----------|---------------------------|
-| `cream`        | `#F0EDE6` | Page background           |
-| `creamSoft`    | `#FAF8F5` | Card / surface background |
-| `lavender`     | `#BBA8C4` | Primary accent            |
-| `lavenderDk`   | `#7A6890` | Primary text on lavender  |
-| `sage`         | `#7E9484` | Secondary / success       |
-| `sageDk`       | `#4A6454` | Secondary text on sage    |
-| `cocoa`        | `#3D2E2A` | Primary text / CTA bg     |
-| `stone`        | `#9A9490` | Muted text                |
-| `border`       | `#E4E0DA` | Default border            |
-| `rose`         | `#D4B8C0` | Accent / warning          |
-| `gold`         | `#C4A882` | Warm accent               |
-
-### Phase Colors
-
-| Phase        | Emoji | Color     | Light BG  |
-|--------------|-------|-----------|-----------|
-| Follicular   | 🌱   | `#A8C4A0` | `#EEF5EC` |
-| Ovulation    | ✨   | `#C4899A` | `#F5EAF0` |
-| Luteal       | 🍂   | `#C4A882` | `#F5EDE0` |
-| Menstrual    | 🌙   | `#9EB0C4` | `#EAF0F5` |
-
-### Typography
-
-| Role    | Font                | Size | Weight |
-|---------|---------------------|------|--------|
-| Display | Playfair Display    | 22–56px | 400–500 |
-| Heading | DM Sans             | 14–20px | 500    |
-| Body    | DM Sans             | 12–14px | 400    |
-| Caption | DM Sans             | 9–11px  | 400    |
-
-### Border Radius
-
-```
-xs: 6px   sm: 10px   md: 16px
-lg: 22px  xl: 28px   full: 999px
-```
-
----
-
-## 🧩 Component Architecture
-
-### AppContext (App.jsx)
-Global state ทั้งหมดอยู่ใน `AppContext`:
-
-```js
-const ctx = {
-  user,           // { name, age, height, weight, goalWeight, targetCal, tdee, bmi, currentPhase, cycleDay }
-  setUser,
-  weightHistory,  // [{ date, value, change }]
-  logWeight,      // (value: number) => void
-  foodLog,        // [{ id, emoji, name, time, meal, cal }]
-  cartItems,      // food items added in Tracker
-  toggleCartItem, // (food) => void
-  totalCal,       // computed: foodLog + cart
-  totalProtein,   // computed
-  totalCarb,      // computed
-  totalFat,       // computed
-  navTo,          // (screenId: string) => void
-  showToast,      // (message: string) => void
-  currentPhase,   // PHASES[user.currentPhase] object
-  PHASES,         // full phase config map
-  tokens,         // design tokens object
-}
-```
-
-### PHASES config (App.jsx)
-```js
-PHASES.ovulation = {
-  key, label, emoji, days, sub,
-  color, colorLt, textClr, badge,
-  desc, eat[], avoid[],
-  calRange,
-}
-```
-
-### FOOD_DB (Tracker.jsx)
-```js
-{
-  id, emoji, name,
-  cal, protein, carb, fat,
-  cat,          // "rice" | "curry" | "snack" | "fruit"
-  hormoneTag,   // "good" | "neutral" | "avoid"
-}
-```
-
----
-
-## 📱 Screens
-
-### Onboarding
-- 3 slides: Intro → Phase overview → Personalized stats
-- Swipeable dots pagination
-- "ข้าม" skip button
-- Float + spin ring animation (CSS keyframes)
-
-### Home
-- Greeting เปลี่ยนตามเวลาจริง
-- Phase banner → กดเพื่อไป Phases screen
-- Stats: calorie วันนี้ / น้ำหนัก / day score
-- Insight band: เปลี่ยน tip ตาม phase
-- Food rail: suggested foods ตาม phase กดเพิ่ม/ลบได้
-- Food log: รายการมื้ออาหารวันนี้
-
-### Phases
-- Proportional cycle bar (13:3:11:5)
-- 4 phase cards — expand/collapse ทีละ 1
-- Expanded section: hormone level bars + calorie range + exercise tips
-- กดที่ cycle bar scroll to card ได้
-
-### Tracker (Food Calculator)
-- Calorie ring (Canvas, DPR-aware)
-- Macro bars P/C/F real-time
-- Remaining kcal display
-- Cart summary: chips ของที่เพิ่มแล้ว
-- Search + clear button
-- 5-category filter
-- Food grid 2-col + hormone tag badge
-- 26 Thai food items
-
-### Weight
-- Hero: น้ำหนักปัจจุบัน Playfair Display 56px
-- Lost badge + goal stats row
-- SVG Bezier line chart (last 6 entries)
-- Weekly progress + monthly projection
-- Log input with validation (Enter key support)
-- History list: 6 รายการล่าสุด
-
-### Profile
-- Avatar + name + phase pill
-- BMI scale bar with marker
-- Goal progress bar (% toward target)
-- Hormone mini-summary ตาม phase
-- Sections: ข้อมูลส่วนตัว / เป้าหมาย / โภชนาการ / settings
-
----
-
-## 🔧 การปรับแต่ง
-
-### เปลี่ยนข้อมูลผู้ใช้
-แก้ `INITIAL_USER` ใน `App.jsx`:
-```js
-const INITIAL_USER = {
-  name:         "ชื่อผู้ใช้",
-  weight:       54.0,
-  goalWeight:   52.0,
-  targetCal:    1440,
-  currentPhase: "ovulation",  // follicular | ovulation | luteal | menstrual
-  cycleDay:     14,
-  // ...
-}
-```
-
-### เพิ่มอาหารใหม่
-เพิ่มใน `FOOD_DB` ใน `Tracker.jsx`:
-```js
-{
-  id: 27,
-  emoji: "🥗",
-  name: "ชื่ออาหาร",
-  cal: 200, protein: 15, carb: 20, fat: 8,
-  cat: "curry",       // rice | curry | snack | fruit
-  hormoneTag: "good", // good | neutral | avoid
-}
-```
-
-### เปลี่ยน Palette
-แก้ `tokens` object ใน `App.jsx` ได้เลย ทุก component ดึงจาก context
-
----
-
-## 🌿 Design Philosophy
-
-> "Soft Organic Luxury" — ไม่หวานเกิน ไม่แข็งเกิน
-> ความรู้สึก "ดูแลตัวเองอย่างมีคลาส" ตรงกับ Identity ของ HormoneEats
-
-- ไม่ใช้ gradient สำเร็จรูป
-- ไม่ใช้ shadow จัด
-- Playfair Display สำหรับ hero text เท่านั้น
-- DM Sans สำหรับ UI ทุกส่วน
-- สี cocoa `#3D2E2A` แทน black ให้ความรู้สึกนุ่มกว่า
-- Animation: float + spin เฉพาะ onboarding ring
-- Transition: fadeUp stagger สำหรับ screen enter
-
----
-
-## 📋 Roadmap
-
-- [ ] รอบเดือน tracker (บันทึกวันแรก → คำนวณเฟสอัตโนมัติ)
-- [ ] Push notification มื้ออาหาร
-- [ ] Barcode scanner อาหารสำเร็จรูป
-- [ ] AI meal plan generator (Anthropic API)
-- [ ] Export PDF รายงานสุขภาพรายเดือน
-- [ ] Dark mode
-
----
-
-*HormoneEats v1.0 · Palette D · Built with React + Vite*
+ 
+*Designed and built by Ariya Teeradakorn*  
+[Portfolio](https://ariyaproject.netlify.app) · [LinkedIn](https://linkedin.com/in/ariya-teeradakorn-24b73a264/)
