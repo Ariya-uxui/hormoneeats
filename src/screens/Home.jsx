@@ -1,6 +1,6 @@
 import React from "react"
 import { useApp, ScreenWrapper } from "../App.jsx"
- 
+import { Badge } from "../design-system/components/Badge"
 /* ═══════════════════════════════════════════════════
    HOME SCREEN
    Layout (from wireframe):
@@ -393,10 +393,11 @@ function FoodLogList({ log }) {
           }}>
             {item.emoji}
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 500, color: tokens.cocoa }}>{item.name}</div>
-            <div style={{ fontSize: 10, color: tokens.stone, marginTop: 2 }}>
-              {item.time}{item.meal ? ` · ${item.meal}` : ""}
+          <div style={{ flex:1, display:"flex", flexDirection:"column", gap:4 }}>
+            <div style={{ fontSize:13, fontWeight:500, color:tokens.cocoa }}>{item.name}</div>
+            <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+               <span style={{ fontSize:10, color:tokens.stone }}>{item.time}</span>
+              {item.meal && <Badge label={item.meal} size="sm" />}
             </div>
           </div>
           <div style={{ fontSize: 12, fontWeight: 500, color: tokens.sageDk, flexShrink: 0 }}>
