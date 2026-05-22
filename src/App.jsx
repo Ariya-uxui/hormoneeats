@@ -273,7 +273,7 @@ export default function App(){
     hormoneType,
     currentPhase: recommendedPhase ?? u.currentPhase,
   }))
-  setTimeout(() => setScreen("onboarding"), 50)
+  setScreen("onboarding")  // ← เรียกตรงๆ เลย
 }
  
   /* ── Log weight ── */
@@ -395,29 +395,20 @@ export default function App(){
   }
  
   return(
-    <AppContext.Provider value={ctx}>
-      <PhoneShell>
-        {(screen==="quiz" || screen==="onboarding")
-          ? screen==="quiz"
-            ? <HormoneQuiz onComplete={handleQuizComplete} />
-            : <Onboarding onStart={()=>navTo("home")} />
-          : screens[screen]
-          ? (
-            <>
-              {screens[screen]}
-              <BottomNav current={screen} onChange={navTo}/>
-              <Toast message={toast.msg} visible={toast.visible}/>
-            </>
-          )
-          : (
-            <>
-              <Home/>
-              <BottomNav current="home" onChange={navTo}/>
-              <Toast message={toast.msg} visible={toast.visible}/>
-            </>
-          )
-        }
-      </PhoneShell>
-    </AppContext.Provider>
-  )
+  <AppContext.Provider value={ctx}>
+    <PhoneShell>
+      {screen === "quiz" ? (
+        <HormoneQuiz onComplete={handleQuizComplete} />
+      ) : screen === "onboarding" ? (
+        <Onboarding onStart={() => navTo("home")} />
+      ) : screens[screen] ? (
+        <>
+          {screens[screen]}
+          <BottomNav current={screen} onChange={navTo}/>
+          <Toast message={toast.msg} visible={toast.visible}/>
+        </>
+      ) : null}
+    </PhoneShell>
+  </AppContext.Provider>
+)
 }
