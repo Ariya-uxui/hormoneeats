@@ -6,7 +6,8 @@
    ข้อมูลรอบเดือนแบ่งเป็น 2 ส่วน:
    - periodLogs    [{ id, startDate, endDate|null, createdAt, updatedAt }]
    - cycleSettings { cycleLength|null, periodLength|null }  ← ผู้ใช้กรอกเอง ไม่บังคับ
-   (dailyLogs จะเพิ่มใน Sprint 2)
+   - dailyLogs     { "YYYY-MM-DD": { mood, symptoms, note } }  ← Sprint 2
+                   ฟังก์ชันจัดการอยู่ที่ src/features/wellness/dailyLogs.js
 
    ฟังก์ชันจัดการ periodLogs เป็น pure function:
    รับ list เดิม → คืน { ok, logs, error } ไม่แตะ localStorage เอง
@@ -28,6 +29,8 @@ export const STORAGE_KEYS = {
   // ใหม่ (Sprint 1)
   periodLogs:    "he_periodLogs",
   cycleSettings: "he_cycleSettings",
+  // ใหม่ (Sprint 2)
+  dailyLogs:     "he_dailyLogs",
 }
 
 /** ข้อมูลที่ถือเป็นข้อมูลสุขภาพ — ลบได้แยกจากการตั้งค่าอื่น */
@@ -35,6 +38,7 @@ export const HEALTH_DATA_KEYS = [
   STORAGE_KEYS.periodLogs,
   STORAGE_KEYS.cycleSettings,
   STORAGE_KEYS.moodLogs,
+  STORAGE_KEYS.dailyLogs,
   STORAGE_KEYS.weightHistory,
 ]
 

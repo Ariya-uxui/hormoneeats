@@ -1,439 +1,348 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useApp, ScreenWrapper } from "../App.jsx"
- 
+import {
+  MOODS, SYMPTOMS, SEVERITY,
+  getDailyLog, listDailyLogs, toggleMood, cycleSymptom, upsertDailyLog, deleteDailyLog,
+} from "../features/wellness/dailyLogs.js"
+import {
+  getCycleSnapshot, todayKey, addDays, formatThaiDate,
+} from "../features/cycle/cycleCalculations.js"
+
 /* ═══════════════════════════════════════════════════
-   MOOD & ENERGY TRACKER
-   บันทึกอารมณ์ + พลังงานรายวัน
-   เชื่อมโยงกับเฟสฮอร์โมน
+   MOOD & SYMPTOM CHECK-IN (Sprint 2)
+   เป้าหมาย: บันทึกได้ใน 10–15 วินาที
+   - แตะอารมณ์ 1 ครั้ง → บันทึกทันที (ไม่มีปุ่ม Save)
+   - แตะอาการซ้ำเพื่อเพิ่มระดับ: ไม่มี → เล็กน้อย → ปานกลาง → มาก → ไม่มี
+   - เลื่อนดู/แก้วันก่อนหน้าได้ ไม่มีวันในอนาคต
+   - ไม่มีข้อความทำนายอารมณ์จากเฟส — แสดงเฟสเป็นบริบท (ประมาณ) เท่านั้น
+   ┌─ Header + DayPicker ─────────────────────────┐
+   ├─ CycleContext (ถ้ามีบันทึกประจำเดือน)          │
+   ├─ MoodPicker                                  │
+   ├─ SymptomPicker (ความอยากอาหาร · ร่างกาย)       │
+   ├─ NoteField                                   │
+   └─ History (14 วันล่าสุด)                         │
 ═══════════════════════════════════════════════════ */
- 
-const MOODS = [
-  { id:"great",   emoji:"🤩", labelTh:"ยอดเยี่ยม", labelEn:"Great",   color:"#A8C4A0", score:5 },
-  { id:"good",    emoji:"😊", labelTh:"ดี",         labelEn:"Good",    color:"#BBA8C4", score:4 },
-  { id:"neutral", emoji:"😐", labelTh:"ปกติ",       labelEn:"Neutral", color:"#C4A882", score:3 },
-  { id:"tired",   emoji:"😔", labelTh:"อ่อนเพลีย", labelEn:"Tired",   color:"#9EB0C4", score:2 },
-  { id:"bad",     emoji:"😞", labelTh:"แย่",        labelEn:"Bad",     color:"#D4B8C0", score:1 },
-]
- 
-const ENERGY_LEVELS = [
-  { id:"high",   emoji:"⚡", labelTh:"พลังงานสูง", labelEn:"High",   color:"#A8C4A0" },
-  { id:"medium", emoji:"🔋", labelTh:"ปานกลาง",    labelEn:"Medium", color:"#C4A882" },
-  { id:"low",    emoji:"🪫", labelTh:"พลังงานต่ำ", labelEn:"Low",    color:"#9EB0C4" },
-]
- 
-const SYMPTOMS = [
-  { id:"bloating",   emoji:"🫀", labelTh:"ท้องอืด", labelEn:"Bloating"      },
-  { id:"cramps",     emoji:"😣", labelTh:"ปวดท้อง", labelEn:"Cramps"      },
-  { id:"headache",   emoji:"🤕", labelTh:"ปวดหัว", labelEn:"Headache"       },
-  { id:"cravings",   emoji:"🍫", labelTh:"อยากของหวาน", labelEn:"Cravings"  },
-  { id:"anxious",    emoji:"😰", labelTh:"วิตกกังวล", labelEn:"Anxious"    },
-  { id:"focused",    emoji:"🎯", labelTh:"โฟกัสดี", labelEn:"Focused"      },
-  { id:"motivated",  emoji:"💪", labelTh:"มีแรงบันดาล", labelEn:"Motivated"  },
-  { id:"sleepy",     emoji:"😴", labelTh:"ง่วงนอน", labelEn:"Sleepy"      },
-  { id:"happy",      emoji:"✨", labelTh:"มีความสุข", labelEn:"Happy"    },
-  { id:"irritable",  emoji:"😤", labelTh:"หงุดหงิด", labelEn:"Irritable"     },
-]
- 
-/* ── helpers ── */
-function todayKey() {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`
+
+const MOOD_BY_ID    = Object.fromEntries(MOODS.map(m => [m.id, m]))
+const SYMPTOM_BY_ID = Object.fromEntries(SYMPTOMS.map(s => [s.id, s]))
+const LEGACY_LABELS = {
+  anxious:"วิตกกังวล", focused:"โฟกัสดี", motivated:"มีแรงบันดาลใจ", happy:"มีความสุข", irritable:"หงุดหงิด",
 }
-function formatDateThai(dateKey) {
-  const [y,m,d] = dateKey.split("-").map(Number)
-  const mo = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.",
-               "ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."]
-  return `${d} ${mo[m-1]}`
-}
- 
-/* ── Mood insight per phase ── */
-const PHASE_MOOD_TIPS = {
-  follicular: { tip:"เฟสนี้ Estrogen สูงขึ้น พลังงานและอารมณ์มักดีขึ้นตามธรรมชาติ 🌱", color:"#A8C4A0" },
-  ovulation:  { tip:"ช่วง Ovulation พลังงานและ confidence สูงสุด เหมาะทำสิ่งสำคัญ ✨", color:"#C4899A" },
-  luteal:     { tip:"Progesterone สูง อาจรู้สึกหงุดหงิดหรืออยากของหวาน เป็นเรื่องปกติ 🍂", color:"#C4A882" },
-  menstrual:  { tip:"ร่างกายกำลังพักฟื้น พักผ่อนให้เพียงพอและกินอาหารบำรุงธาตุเหล็ก 🌙", color:"#9EB0C4" },
-}
- 
-/* ═══════════════════════════════════════════════════
-   LOG ENTRY FORM
-═══════════════════════════════════════════════════ */
-function LogForm({ onSave, tokens, currentPhase }) {
-  const { t, lang } = useApp()
-  const [mood,     setMood    ] = useState(null)
-  const [energy,   setEnergy  ] = useState(null)
-  const [symptoms, setSymptoms] = useState([])
-  const [note,     setNote    ] = useState("")
- 
-  function toggleSymptom(id) {
-    setSymptoms(prev =>
-      prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
-    )
+
+function useStyles(tokens) {
+  return {
+    card: {
+      margin:"12px 16px 0", background:tokens.creamSoft, borderRadius:20,
+      border:`1px solid ${tokens.borderLt}`, padding:"14px 16px",
+    },
+    title: { fontSize:13, fontWeight:500, color:tokens.cocoa, marginBottom:10 },
+    hint:  { fontSize:11, color:tokens.stone, lineHeight:1.5 },
   }
- 
-  function handleSave() {
-    if (!mood || !energy) return
-    onSave({ mood, energy, symptoms, note, dateKey: todayKey(),
-      time: new Date().toLocaleTimeString("th-TH", { hour:"2-digit", minute:"2-digit" }),
-      phase: currentPhase.key,
-    })
-    setMood(null); setEnergy(null); setSymptoms([]); setNote("")
-  }
- 
-  const phaseTip = PHASE_MOOD_TIPS[currentPhase.key]
- 
+}
+
+function dayLabel(date, today, lang) {
+  if (date === today) return lang === "en" ? "Today" : "วันนี้"
+  if (date === addDays(today, -1)) return lang === "en" ? "Yesterday" : "เมื่อวาน"
+  return formatThaiDate(date)
+}
+
+/* ── Day picker ── */
+function DayPicker({ date, today, onChange, tokens, lang }) {
+  const btn = (disabled) => ({
+    width:32, height:32, borderRadius:10, border:`1px solid ${tokens.border}`,
+    background:"transparent", color: disabled ? tokens.stoneLt : tokens.cocoaMid,
+    fontSize:16, cursor: disabled ? "default" : "pointer", fontFamily:"inherit",
+  })
+  const atToday = date >= today
   return (
-    <div className="fade-up" style={{
-      margin:"12px 16px 0",
-      background:tokens.creamSoft,
-      border:`1px solid ${tokens.borderLt}`,
-      borderRadius:20, padding:"16px",
-    }}>
-      {/* Phase tip */}
-      <div style={{
-        background: phaseTip.color+"20",
-        border:`1px solid ${phaseTip.color}40`,
-        borderRadius:12, padding:"10px 12px",
-        fontSize:12, color:tokens.cocoaMid,
-        lineHeight:1.55, marginBottom:14,
-      }}>
-        {lang==="en" ? phaseTip.tipEn : phaseTip.tipTh}
+    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+      <button style={btn(false)} aria-label="วันก่อนหน้า" onClick={() => onChange(addDays(date, -1))}>‹</button>
+      <div style={{ minWidth:84, textAlign:"center", fontSize:13, fontWeight:500, color:tokens.cocoa }}>
+        {dayLabel(date, today, lang)}
       </div>
- 
-      {/* Mood picker */}
-      <div style={{ marginBottom:14 }}>
-        <div style={{ fontSize:11, fontWeight:500, color:tokens.stone,
-          letterSpacing:".06em", textTransform:"uppercase", marginBottom:8 }}>
-          {t("mood.mood_label")}
-        </div>
-        <div style={{ display:"flex", gap:6, justifyContent:"space-between" }}>
-          {MOODS.map(m => (
-            <div key={m.id} onClick={() => setMood(m.id)} style={{
-              flex:1, display:"flex", flexDirection:"column",
-              alignItems:"center", gap:4,
-              padding:"10px 4px",
-              border:`2px solid ${mood===m.id ? m.color : tokens.borderLt}`,
-              borderRadius:14,
-              background: mood===m.id ? m.color+"25" : tokens.cream,
-              cursor:"pointer", transition:"all .15s",
-            }}>
-              <span style={{ fontSize:22 }}>{m.emoji}</span>
-              <span style={{ fontSize:9, color: mood===m.id ? tokens.cocoa : tokens.stone,
-                fontWeight: mood===m.id ? 500 : 400, textAlign:"center" }}>
-                {lang==="en" ? m.labelEn : m.labelTh}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
- 
-      {/* Energy picker */}
-      <div style={{ marginBottom:14 }}>
-        <div style={{ fontSize:11, fontWeight:500, color:tokens.stone,
-          letterSpacing:".06em", textTransform:"uppercase", marginBottom:8 }}>
-          {lang==="en" ? "Energy Level" : "ระดับพลังงาน"}
-        </div>
-        <div style={{ display:"flex", gap:8 }}>
-          {ENERGY_LEVELS.map(e => (
-            <div key={e.id} onClick={() => setEnergy(e.id)} style={{
-              flex:1, display:"flex", alignItems:"center",
-              justifyContent:"center", gap:6, padding:"10px 8px",
-              border:`2px solid ${energy===e.id ? e.color : tokens.borderLt}`,
-              borderRadius:12,
-              background: energy===e.id ? e.color+"25" : tokens.cream,
-              cursor:"pointer", transition:"all .15s",
-              fontSize:12, fontWeight: energy===e.id ? 500 : 400,
-              color: energy===e.id ? tokens.cocoa : tokens.stone,
-            }}>
-              <span style={{ fontSize:16 }}>{e.emoji}</span>
-              {lang==="en" ? e.labelEn : e.labelTh}
-            </div>
-          ))}
-        </div>
-      </div>
- 
-      {/* Symptoms */}
-      <div style={{ marginBottom:14 }}>
-        <div style={{ fontSize:11, fontWeight:500, color:tokens.stone,
-          letterSpacing:".06em", textTransform:"uppercase", marginBottom:8 }}>
-          {t("mood.symptoms")}
-        </div>
-        <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
-          {SYMPTOMS.map(s => {
-            const active = symptoms.includes(s.id)
-            return (
-              <div key={s.id} onClick={() => toggleSymptom(s.id)} style={{
-                display:"flex", alignItems:"center", gap:4,
-                padding:"5px 10px",
-                border:`1px solid ${active ? tokens.lavender : tokens.border}`,
-                borderRadius:999, cursor:"pointer",
-                background: active ? tokens.lavenderLt : tokens.cream,
-                fontSize:11, fontWeight: active ? 500 : 400,
-                color: active ? tokens.lavenderDk : tokens.stone,
-                transition:"all .15s",
-              }}>
-                <span style={{ fontSize:12 }}>{s.emoji}</span>
-                {lang==="en" ? s.labelEn : s.labelTh}
-              </div>
-            )
-          })}
-        </div>
-      </div>
- 
-      {/* Note */}
-      <div style={{ marginBottom:14 }}>
-        <div style={{ fontSize:11, fontWeight:500, color:tokens.stone,
-          letterSpacing:".06em", textTransform:"uppercase", marginBottom:8 }}>
-          {t("mood.note")}
-        </div>
-        <textarea
-          value={note}
-          onChange={e => setNote(e.target.value)}
-          placeholder="รู้สึกยังไงบ้างวันนี้..."
-          rows={2}
-          style={{
-            width:"100%", padding:"10px 12px",
-            border:`1px solid ${tokens.border}`, borderRadius:12,
-            fontSize:13, fontFamily:"'DM Sans',sans-serif",
-            color:tokens.cocoa, background:tokens.cream,
-            outline:"none", resize:"none", lineHeight:1.5,
-          }}
-          onFocus={e => e.target.style.borderColor = tokens.lavender}
-          onBlur={e  => e.target.style.borderColor = tokens.border}
-        />
-      </div>
- 
-      {/* Save button */}
-      <button
-        onClick={handleSave}
-        disabled={!mood || !energy}
-        style={{
-          width:"100%", padding:"13px",
-          background: mood && energy ? tokens.cocoa : tokens.border,
-          color: mood && energy ? tokens.cream : tokens.stone,
-          border:"none", borderRadius:14,
-          fontSize:14, fontWeight:500,
-          fontFamily:"'DM Sans',sans-serif",
-          cursor: mood && energy ? "pointer" : "default",
-          transition:"all .2s",
-        }}
-      >
-        {t("mood.save")}
-      </button>
+      <button style={btn(atToday)} aria-label="วันถัดไป" disabled={atToday}
+        onClick={() => !atToday && onChange(addDays(date, 1))}>›</button>
     </div>
   )
 }
- 
-/* ═══════════════════════════════════════════════════
-   HISTORY CARD
-═══════════════════════════════════════════════════ */
-function HistoryCard({ entry, tokens }) {
-  const { lang } = useApp()
-  const mood   = MOODS.find(m => m.id === entry.mood)
-  const energy = ENERGY_LEVELS.find(e => e.id === entry.energy)
- 
+
+/* ── Mood picker ── */
+function MoodPicker({ value, onPick, tokens, s, lang }) {
   return (
-    <div style={{
-      background:tokens.creamSoft,
-      border:`1px solid ${tokens.borderLt}`,
-      borderRadius:16, padding:"12px 14px",
-      marginBottom:8,
-    }}>
-      <div style={{ display:"flex", justifyContent:"space-between",
-        alignItems:"center", marginBottom:8 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-          <span style={{ fontSize:24 }}>{mood?.emoji}</span>
-          <div>
-            <div style={{ fontSize:13, fontWeight:500, color:tokens.cocoa }}>
-              {lang==="en" ? mood?.labelEn : mood?.labelTh}
-            </div>
-            <div style={{ fontSize:10, color:tokens.stone }}>
-              {formatDateThai(entry.dateKey)} · {entry.time}
-            </div>
-          </div>
-        </div>
-        <div style={{
-          display:"flex", alignItems:"center", gap:4,
-          padding:"4px 10px", borderRadius:999,
-          background: energy ? energy.color+"20" : tokens.borderLt,
-          fontSize:11, color:tokens.cocoaMid,
-        }}>
-          {energy?.emoji} {lang==="en" ? energy?.labelEn : energy?.labelTh}
-        </div>
-      </div>
- 
-      {entry.symptoms?.length > 0 && (
-        <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginBottom:6 }}>
-          {entry.symptoms.map(sid => {
-            const s = SYMPTOMS.find(x => x.id === sid)
-            return s ? (
-              <span key={sid} style={{
-                fontSize:10, padding:"2px 8px",
-                background:tokens.lavenderLt, color:tokens.lavenderDk,
-                borderRadius:999,
-              }}>
-                {s.emoji} {lang==="en" ? s.labelEn : s.labelTh}
-              </span>
-            ) : null
-          })}
-        </div>
-      )}
- 
-      {entry.note && (
-        <div style={{ fontSize:12, color:tokens.stone,
-          fontStyle:"italic", lineHeight:1.5 }}>
-          "{entry.note}"
-        </div>
-      )}
-    </div>
-  )
-}
- 
-/* ═══════════════════════════════════════════════════
-   MOOD CHART (last 7 days)
-═══════════════════════════════════════════════════ */
-function MoodChart({ logs, tokens }) {
-  const { t, lang } = useApp()
-  if (logs.length === 0) return null
- 
-  const last7 = [...logs].slice(0, 7).reverse()
-  const maxScore = 5
- 
-  return (
-    <div className="fade-up" style={{
-      margin:"12px 16px 0",
-      background:tokens.creamSoft,
-      border:`1px solid ${tokens.borderLt}`,
-      borderRadius:20, padding:"14px 16px",
-    }}>
-      <div style={{ fontSize:13, fontWeight:500, color:tokens.cocoa, marginBottom:12 }}>
-        {t("mood.chart_title")}
-      </div>
-      <div style={{ display:"flex", alignItems:"flex-end",
-        gap:6, height:60, marginBottom:8 }}>
-        {last7.map((log, i) => {
-          const mood  = MOODS.find(m => m.id === log.mood)
-          const score = mood?.score ?? 3
-          const h     = (score / maxScore) * 100
+    <div className="fade-up" style={s.card}>
+      <div style={s.title}>{lang === "en" ? "How are you feeling?" : "วันนี้รู้สึกยังไงบ้าง?"}</div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8 }}>
+        {MOODS.map(m => {
+          const on = value === m.id
           return (
-            <div key={i} style={{ flex:1, display:"flex",
-              flexDirection:"column", alignItems:"center", gap:3 }}>
-              <div style={{
-                width:"100%", height:`${h}%`,
-                background: mood?.color ?? tokens.border,
-                borderRadius:"4px 4px 0 0",
-                minHeight:6, transition:"height .5s ease",
-              }}/>
-              <span style={{ fontSize:14 }}>{mood?.emoji ?? "·"}</span>
-              <span style={{ fontSize:8, color:tokens.stone }}>
-                {formatDateThai(log.dateKey).split(" ")[0]}
+            <button key={m.id} onClick={() => onPick(m.id)} aria-pressed={on} style={{
+              padding:"10px 4px", borderRadius:14, cursor:"pointer", fontFamily:"inherit",
+              border:`1.5px solid ${on ? tokens.lavenderDk : tokens.border}`,
+              background: on ? tokens.lavenderLt : "white",
+              display:"flex", flexDirection:"column", alignItems:"center", gap:4,
+              transition:"all .15s",
+            }}>
+              <span style={{ fontSize:24 }}>{m.emoji}</span>
+              <span style={{ fontSize:11.5, color: on ? tokens.lavenderDk : tokens.cocoaMid, fontWeight: on ? 600 : 400 }}>
+                {lang === "en" ? m.labelEn : m.label}
               </span>
-            </div>
+            </button>
           )
         })}
       </div>
     </div>
   )
 }
- 
+
+/* ── Severity dots ── */
+function Dots({ level, tokens }) {
+  return (
+    <span style={{ display:"inline-flex", gap:2 }} aria-hidden="true">
+      {[1, 2, 3].map(i => (
+        <span key={i} style={{ width:5, height:5, borderRadius:"50%",
+          background: i <= level ? tokens.lavenderDk : tokens.border }} />
+      ))}
+    </span>
+  )
+}
+
+/* ── Symptom picker ── */
+function SymptomPicker({ symptoms, onTap, tokens, s, lang }) {
+  const groups = [
+    { id:"craving", title: lang === "en" ? "Food cravings" : "ความอยากอาหาร" },
+    { id:"body",    title: lang === "en" ? "Body" : "ร่างกาย" },
+  ]
+  return (
+    <div className="fade-up" style={s.card}>
+      <div style={{ ...s.title, marginBottom:4 }}>{lang === "en" ? "Symptoms & cravings" : "อาการและความอยากอาหาร"}</div>
+      <div style={{ ...s.hint, marginBottom:10 }}>
+        {lang === "en" ? "Tap again to increase level · 4th tap clears" : "แตะซ้ำเพื่อเพิ่มระดับ · แตะครั้งที่ 4 เพื่อล้าง"}
+      </div>
+      {groups.map(g => (
+        <div key={g.id} style={{ marginBottom:10 }}>
+          <div style={{ fontSize:10.5, color:tokens.stone, marginBottom:6, letterSpacing:".04em" }}>{g.title}</div>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:7 }}>
+            {SYMPTOMS.filter(x => x.group === g.id).map(x => {
+              const lv = symptoms[x.id] ?? 0
+              const sev = SEVERITY.find(v => v.level === lv)
+              return (
+                <button key={x.id} onClick={() => onTap(x.id)}
+                  aria-label={`${x.label}${sev ? ` ระดับ${sev.label}` : ""}`}
+                  style={{
+                    display:"flex", alignItems:"center", gap:6, padding:"8px 12px",
+                    borderRadius:999, cursor:"pointer", fontFamily:"inherit", fontSize:12.5,
+                    border:`1.5px solid ${lv ? tokens.lavenderDk : tokens.border}`,
+                    background: lv ? tokens.lavenderLt : "white",
+                    color: lv ? tokens.lavenderDk : tokens.cocoaMid,
+                    transition:"all .15s",
+                  }}>
+                  <span>{x.emoji}</span>
+                  <span>{lang === "en" ? x.labelEn : x.label}</span>
+                  {lv > 0 && <Dots level={lv} tokens={tokens} />}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ── Note ── */
+function NoteField({ value, onSave, tokens, s, lang }) {
+  const [open,  setOpen ] = useState(Boolean(value))
+  const [draft, setDraft] = useState(value ?? "")
+
+  if (!open) {
+    return (
+      <div style={{ margin:"10px 16px 0" }}>
+        <button onClick={() => setOpen(true)} style={{
+          border:"none", background:"none", color:tokens.lavenderDk, fontSize:12.5,
+          cursor:"pointer", fontFamily:"inherit", padding:0,
+        }}>
+          + {lang === "en" ? "Add a note" : "เพิ่มโน้ต (ไม่บังคับ)"}
+        </button>
+      </div>
+    )
+  }
+  return (
+    <div className="fade-up" style={s.card}>
+      <label htmlFor="mood-note" style={{ ...s.title, display:"block" }}>{lang === "en" ? "Note" : "โน้ต"}</label>
+      <textarea id="mood-note" rows={2} maxLength={280} value={draft}
+        onChange={e => setDraft(e.target.value)}
+        onBlur={() => draft !== (value ?? "") && onSave(draft)}
+        placeholder={lang === "en" ? "Anything worth remembering today?" : "มีอะไรอยากจดไว้ไหม เช่น นอนน้อย งานเยอะ"}
+        style={{
+          width:"100%", padding:"10px 12px", borderRadius:12, border:`1px solid ${tokens.border}`,
+          fontSize:13, fontFamily:"inherit", color:tokens.cocoa, resize:"none", background:"white",
+        }} />
+      <div style={{ ...s.hint, textAlign:"right", marginTop:4 }}>{draft.length}/280</div>
+    </div>
+  )
+}
+
+/* ── History ── */
+function History({ logs, periodLogs, cycleSettings, selected, onPick, PHASES, tokens, s, lang }) {
+  const items = listDailyLogs(logs).slice(0, 14)
+  if (items.length === 0) return null
+  return (
+    <div className="fade-up" style={s.card}>
+      <div style={s.title}>{lang === "en" ? "Recent days" : "ย้อนหลัง"}</div>
+      {items.map((log, i) => {
+        const snap = getCycleSnapshot(periodLogs, cycleSettings, log.date)
+        const phase = snap && snap.phase !== "late" ? PHASES[snap.phase] : null
+        const mood = MOOD_BY_ID[log.mood]
+        const syms = Object.entries(log.symptoms ?? {})
+        return (
+          <button key={log.date} onClick={() => onPick(log.date)} style={{
+            width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 0",
+            border:"none", borderTop: i ? `1px solid ${tokens.borderLt}` : "none",
+            background: log.date === selected ? tokens.lavenderLt : "none",
+            borderRadius: log.date === selected ? 10 : 0,
+            cursor:"pointer", fontFamily:"inherit", textAlign:"left",
+          }}>
+            <span style={{ fontSize:22, width:30, textAlign:"center" }}>{mood?.emoji ?? "·"}</span>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize:12.5, color:tokens.cocoa }}>
+                {formatThaiDate(log.date)}
+                {snap && (
+                  <span style={{ color:tokens.stone, fontSize:11 }}>
+                    {" "}· {lang === "en" ? "Day" : "วันที่"} {snap.cycleDay}{phase ? ` · ${phase.label}` : ""}
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize:11, color:tokens.stone, marginTop:2, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                {syms.length
+                  ? syms.map(([id, lv]) => `${SYMPTOM_BY_ID[id]?.emoji ?? ""}${"•".repeat(lv)}`).join("  ")
+                  : (mood ? (lang === "en" ? mood.labelEn : mood.label) : "")}
+              </div>
+            </div>
+            <span style={{ fontSize:12, color:tokens.lavenderDk }}>{lang === "en" ? "Edit" : "แก้ไข"}</span>
+          </button>
+        )
+      })}
+      <div style={{ ...s.hint, marginTop:8 }}>
+        {lang === "en"
+          ? "Cycle day and phase are estimates from your logged periods."
+          : "วันของรอบและเฟสเป็นค่าประมาณจากวันประจำเดือนที่บันทึก"}
+      </div>
+    </div>
+  )
+}
+
 /* ═══════════════════════════════════════════════════
-   MOOD TRACKER — main export
+   SCREEN
 ═══════════════════════════════════════════════════ */
 export default function MoodTracker() {
-  const { tokens, currentPhase, user, t, lang } = useApp()
-  const [logs,    setLogs   ] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("he_moodlogs") ?? "[]")
-    } catch { return [] }
-  })
-  const [tab, setTab] = useState("log") // "log" | "history"
- 
-  function handleSave(entry) {
-    const updated = [entry, ...logs]
-    setLogs(updated)
-    try { localStorage.setItem("he_moodlogs", JSON.stringify(updated)) } catch {}
+  const {
+    dailyLogs, setDailyLogs, periodLogs, cycleSettings, cycleSnapshot,
+    PHASES, tokens, showToast, lang,
+  } = useApp()
+  const s = useStyles(tokens)
+  const today = todayKey()
+
+  const [date, setDate] = useState(today)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const log = getDailyLog(dailyLogs, date)
+  const symptoms = log?.symptoms ?? {}
+
+  // บริบทรอบเดือนของวันที่เลือก (ถ้ามีบันทึกประจำเดือน)
+  const snap = useMemo(
+    () => date === today ? cycleSnapshot : getCycleSnapshot(periodLogs, cycleSettings, date),
+    [date, today, cycleSnapshot, periodLogs, cycleSettings],
+  )
+  const phase = snap && snap.phase !== "late" ? PHASES[snap.phase] : null
+
+  function apply(result) {
+    if (!result.ok) { showToast(result.error); return }
+    setDailyLogs(result.logs)
   }
- 
-  const todayLog = logs.find(l => l.dateKey === todayKey())
- 
+
+  function pickDate(d) {
+    setDate(d)
+    setConfirmDelete(false)
+    document.querySelector(".scroll-body")?.scrollTo({ top:0, behavior:"smooth" })
+  }
+
+  function handleDelete() {
+    apply(deleteDailyLog(dailyLogs, date))
+    setConfirmDelete(false)
+    showToast(lang === "en" ? "Deleted" : "ลบบันทึกแล้ว")
+  }
+
   return (
     <ScreenWrapper>
       {/* Header */}
       <div className="fade-up" style={{
-        background:tokens.creamSoft,
-        padding:"16px 20px 14px",
-        borderBottom:`1px solid ${tokens.borderLt}`,
-        flexShrink:0,
+        background:tokens.creamSoft, padding:"16px 20px 12px",
+        borderBottom:`1px solid ${tokens.borderLt}`, flexShrink:0,
+        display:"flex", alignItems:"flex-end", justifyContent:"space-between", gap:10,
       }}>
-        <div style={{ fontFamily:"'Playfair Display',serif",
-          fontSize:22, color:tokens.cocoa, marginBottom:2 }}>
-          {t("mood.title")}
+        <div>
+          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:tokens.cocoa, marginBottom:2 }}>
+            {lang === "en" ? "Check-in" : "บันทึกวันนี้"}
+          </div>
+          <div style={{ fontSize:11.5, color: log ? tokens.sageDk : tokens.stone }}>
+            {log
+              ? (lang === "en" ? "✓ Saved automatically" : "✓ บันทึกอัตโนมัติแล้ว")
+              : (lang === "en" ? "Tap to log — saves instantly" : "แตะเพื่อบันทึก ไม่ต้องกดเซฟ")}
+          </div>
         </div>
-        <div style={{ fontSize:12, color:tokens.stone }}>
-          {currentPhase.emoji} {currentPhase.label} · {lang==="en" ? "Day" : "วันที่"} {user.cycleDay}
-        </div>
+        <DayPicker date={date} today={today} onChange={pickDate} tokens={tokens} lang={lang} />
       </div>
- 
-      {/* Tab switcher */}
-      <div style={{ display:"flex", padding:"10px 16px 0",
-        gap:8, flexShrink:0 }}>
-        {[
-          { id:"log",     label: t("mood.tab_log") },
-          { id:"history", label: t("mood.tab_history") },
-        ].map(tab => (
-          <button key={tab.id} onClick={() => setTab(tab.id)} style={{
-            flex:1, padding:"8px",
-            border:`1px solid ${tokens.border}`,
-            borderRadius:10,
-            background: tab===tab.id ? tokens.cocoa : tokens.cream,
-            color: tab===tab.id ? tokens.cream : tokens.stone,
-            fontSize:13, fontWeight:500, cursor:"pointer",
-            fontFamily:"'DM Sans',sans-serif",
-          }}>{tab.label}</button>
-        ))}
-      </div>
- 
-      <div className="scroll-body" style={{ flex:1, paddingBottom:90 }}>
- 
-        {tab === "log" ? (
-          <>
-            {/* Today summary if already logged */}
-            {todayLog && (
-              <div className="fade-up" style={{
-                margin:"12px 16px 0",
-                background:tokens.sageLt,
-                border:`1px solid rgba(126,148,132,.3)`,
-                borderRadius:16, padding:"12px 14px",
-              }}>
-                <div style={{ fontSize:12, fontWeight:500, color:tokens.sageDk }}>
-                  {t("mood.already_logged")}
-                </div>
-                <div style={{ fontSize:13, color:tokens.cocoaMid, marginTop:4 }}>
-                  {MOODS.find(m=>m.id===todayLog.mood)?.emoji}{" "}
-                  {MOODS.find(m=>m.id===todayLog.mood)?.label} ·{" "}
-                  {ENERGY_LEVELS.find(e=>e.id===todayLog.energy)?.label}
-                </div>
-              </div>
-            )}
-            <LogForm onSave={handleSave} tokens={tokens} currentPhase={currentPhase} />
-          </>
-        ) : (
-          <>
-            <MoodChart logs={logs} tokens={tokens} />
-            <div style={{ padding:"10px 16px 0" }}>
-              {logs.length === 0 ? (
-                <div style={{ textAlign:"center", padding:"40px 0",
-                  color:tokens.stone, fontSize:13 }}>
-                  <div style={{ fontSize:32, marginBottom:12 }}>😊</div>
-                  {t("mood.no_history")}
-                </div>
-              ) : (
-                logs.map((log, i) => (
-                  <HistoryCard key={i} entry={log} tokens={tokens} />
-                ))
-              )}
-            </div>
-          </>
+
+      <div className="scroll-body" style={{ flex:1, paddingBottom:110 }}>
+        {snap && (
+          <div style={{ margin:"12px 16px 0", fontSize:11.5, color:tokens.stone }}>
+            {phase?.emoji ?? "⏳"} {lang === "en" ? "Cycle day" : "วันที่"} {snap.cycleDay}
+            {lang === "en" ? "" : " ของรอบ"} · {phase ? phase.label : (lang === "en" ? "Past expected date" : "เลยวันที่คาดไว้")}
+            {" "}({lang === "en" ? "estimate" : "ประมาณ"})
+          </div>
         )}
+
+        <MoodPicker value={log?.mood ?? null} tokens={tokens} s={s} lang={lang}
+          onPick={id => apply(toggleMood(dailyLogs, date, id))} />
+
+        <SymptomPicker symptoms={symptoms} tokens={tokens} s={s} lang={lang}
+          onTap={id => apply(cycleSymptom(dailyLogs, date, id))} />
+
+        {log?.legacyTags?.length > 0 && (
+          <div style={{ margin:"8px 16px 0", ...s.hint }}>
+            {lang === "en" ? "From your earlier log: " : "จากบันทึกแบบเดิม: "}
+            {log.legacyTags.map(t => LEGACY_LABELS[t] ?? t).join(", ")}
+          </div>
+        )}
+
+        {/* key = date → ฟิลด์โน้ตรีเซ็ตเมื่อเปลี่ยนวัน */}
+        <NoteField key={date} value={log?.note ?? ""} tokens={tokens} s={s} lang={lang}
+          onSave={note => apply(upsertDailyLog(dailyLogs, date, { note }))} />
+
+        {log && (
+          <div style={{ margin:"10px 16px 0", textAlign:"right" }}>
+            {confirmDelete ? (
+              <span style={{ fontSize:12, color:tokens.cocoaMid }}>
+                {lang === "en" ? "Delete this day's log? " : "ลบบันทึกของวันนี้? "}
+                <button onClick={handleDelete} style={{ border:"none", background:"none", color:"#8B4050",
+                  fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>
+                  {lang === "en" ? "Delete" : "ลบ"}
+                </button>
+                <button onClick={() => setConfirmDelete(false)} style={{ border:"none", background:"none",
+                  color:tokens.stone, fontSize:12, cursor:"pointer", fontFamily:"inherit" }}>
+                  {lang === "en" ? "Cancel" : "ยกเลิก"}
+                </button>
+              </span>
+            ) : (
+              <button onClick={() => setConfirmDelete(true)} style={{ border:"none", background:"none",
+                color:tokens.stone, fontSize:12, textDecoration:"underline", cursor:"pointer", fontFamily:"inherit" }}>
+                {lang === "en" ? "Delete this day" : "ลบบันทึกวันนี้"}
+              </button>
+            )}
+          </div>
+        )}
+
+        <History logs={dailyLogs} periodLogs={periodLogs} cycleSettings={cycleSettings}
+          selected={date} onPick={pickDate} PHASES={PHASES} tokens={tokens} s={s} lang={lang} />
       </div>
     </ScreenWrapper>
   )

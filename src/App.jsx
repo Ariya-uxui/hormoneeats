@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useMemo, createContext, useContext } from "react"
 import { getT } from "./translations.js"
 import { useLocalStorage } from "./hooks/useLocalStorage.js"
-import { STORAGE_KEYS, normalizeCycleSettings } from "./services/storage.js"
+import { STORAGE_KEYS, normalizeCycleSettings, readJSON } from "./services/storage.js"
+import { migrateMoodLogs } from "./features/wellness/dailyLogs.js"
 import { getCycleSnapshot } from "./features/cycle/cycleCalculations.js"
 import Onboarding   from "./screens/Onboarding.jsx"
 import Home         from "./screens/Home.jsx"
@@ -270,6 +271,12 @@ export default function App(){
     STORAGE_KEYS.cycleSettings,
     normalizeCycleSettings({ cycleLength: user?.cycleLength }),  // ย้ายค่าเดิมครั้งแรก
   )
+  /* ── Daily logs (Sprint 2) — อารมณ์ อาการ ความอยากอาหาร ──
+     ค่าเริ่มต้นใช้เฉพาะตอนยังไม่มี he_dailyLogs → ย้ายข้อมูลจาก he_moodlogs เดิมครั้งเดียว
+     (he_moodlogs เก็บไว้เป็นสำรอง และถูกลบพร้อม "ลบข้อมูลสุขภาพ") */
+  const [initialDailyLogs] = useState(() => migrateMoodLogs(readJSON(STORAGE_KEYS.moodLogs, [])))
+  const [dailyLogs, setDailyLogs] = useLocalStorage(STORAGE_KEYS.dailyLogs, initialDailyLogs)
+
   const cycleSnapshot = useMemo(
     () => getCycleSnapshot(periodLogs, cycleSettings),
     [periodLogs, cycleSettings],
@@ -411,6 +418,7 @@ export default function App(){
     periodLogs, setPeriodLogs,
     cycleSettings, setCycleSettings,
     cycleSnapshot,
+    dailyLogs, setDailyLogs,
     weightHistory, logWeight,
     foodLog, setFoodLog,
     cartItems, toggleCartItem,

@@ -1,6 +1,8 @@
 import React from "react"
 import { useApp, ScreenWrapper } from "../App.jsx"
 import { Badge } from "../design-system/components/Badge"
+import { MOODS, getDailyLog } from "../features/wellness/dailyLogs.js"
+import { todayKey } from "../features/cycle/cycleCalculations.js"
 /* ═══════════════════════════════════════════════════
    HOME SCREEN
    Layout (from wireframe):
@@ -430,22 +432,10 @@ function AddFoodButton({ onPress }) {
 }
  
  
-/* MoodBanner */
+/* MoodBanner — อ่านบันทึกวันนี้จาก dailyLogs (Sprint 2) */
 function MoodBanner({ onPress }) {
-  const { tokens, t } = useApp()
-  let todayMood = null
-  try {
-    const logs = JSON.parse(localStorage.getItem("he_moodlogs") ?? "[]")
-    const today = new Date()
-    const tk = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`
-    todayMood = logs.find(l => l.dateKey === tk)
-  } catch {}
- 
-  const MOODS = [
-    { id:"great", emoji:"🤩" }, { id:"good", emoji:"😊" },
-    { id:"neutral", emoji:"😐" }, { id:"tired", emoji:"😔" },
-    { id:"bad", emoji:"😞" },
-  ]
+  const { tokens, t, dailyLogs } = useApp()
+  const todayMood = getDailyLog(dailyLogs, todayKey())
   const moodEmoji = MOODS.find(m => m.id === todayMood?.mood)?.emoji
  
   return (

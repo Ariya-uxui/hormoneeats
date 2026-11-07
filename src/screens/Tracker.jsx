@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useApp, ScreenWrapper } from "../App.jsx"
-import { FOOD_DB, CUISINES, CATEGORIES, HORMONE_TAGS, searchFoods } from "../data/foodDatabase.js"
+import { CUISINES, CATEGORIES, searchFoods } from "../data/foodDatabase.js"
+import { getNutrientFacts, getTreatNote, EFFORT } from "../features/nutrition/foodFacts.js"
  
 /* ═══════════════════════════════════════════════════
    TRACKER SCREEN — 100+ foods, 4 cuisines
@@ -175,21 +176,22 @@ function TodayLog({ entries, onDelete, totalCal, targetCal, tokens }) {
   )
 }
  
-/* ── Food Card ── */
-function FoodCard({ food, isAdded, currentPhaseKey, onToggle, tokens }) {
-const { t, lang } = useApp()
- const tag        = HORMONE_TAGS[food.hormoneTag] ?? HORMONE_TAGS.neutral
-  const isPhaseHit = food.phase?.includes(currentPhaseKey)
-  const cuisineFlag = { thai:"🇹🇭", japanese:"🇯🇵", korean:"🇰🇷", western:"🌍" }
- 
+/* ── Food Card ──
+   ป้ายบนการ์ดเป็นข้อเท็จจริงที่คำนวณจากตัวเลข (foodFacts.js) ไม่ใช่ข้อความเรื่องฮอร์โมน
+   ขนมแสดงแคลอรี่ต่อหน่วยแบบกลาง ๆ ไม่มีป้ายเตือน ── */
+const CUISINE_FLAG = { thai:"🇹🇭", japanese:"🇯🇵", korean:"🇰🇷", western:"🌍", other:"🌐" }
+
+function FoodCard({ food, isAdded, onToggle, tokens }) {
+  const { t, lang } = useApp()
+  const facts  = getNutrientFacts(food).filter(f => f.level === "high").slice(0, 2)
+  const treat  = facts.length === 0 ? getTreatNote(food) : null
+  const effort = EFFORT[food.effort]
+
   return (
     <div onClick={() => onToggle(food)}
       style={{
         background: isAdded ? tokens.sageLt : tokens.creamSoft,
-        border: `1px solid ${isAdded
-          ? tokens.sage
-          : isPhaseHit ? tokens.lavender
-          : tokens.borderLt}`,
+        border: `1px solid ${isAdded ? tokens.sage : tokens.borderLt}`,
         borderRadius:16, padding:"12px",
         cursor:"pointer", transition:"all .18s",
         display:"flex", flexDirection:"column",
@@ -200,27 +202,18 @@ const { t, lang } = useApp()
       onTouchStart={e=>e.currentTarget.style.transform="scale(.97)"}
       onTouchEnd={e=>e.currentTarget.style.transform="scale(1)"}
     >
-      {/* Phase highlight badge */}
-      {isPhaseHit && !isAdded && (
-        <div style={{
-          position:"absolute", top:6, right:6,
-          width:8, height:8, borderRadius:"50%",
-          background:tokens.lavender,
-        }} />
-      )}
- 
-      {/* Top row: hormone tag + cuisine flag */}
+      {/* Top row: effort + cuisine flag */}
       <div style={{ display:"flex", justifyContent:"space-between",
-        alignItems:"center", marginBottom:5 }}>
-        <span style={{
-          fontSize:9, fontWeight:500, padding:"2px 7px",
-          borderRadius:999, background:tag.bg, color:tag.color,
-        }}>
-          {tag.label}
-        </span>
-        <span style={{ fontSize:12 }}>{cuisineFlag[food.cuisine] ?? ""}</span>
+        alignItems:"center", marginBottom:5, minHeight:16 }}>
+        {effort ? (
+          <span style={{ fontSize:9, fontWeight:500, padding:"2px 7px",
+            borderRadius:999, background:tokens.creamDeep, color:tokens.cocoaMid }}>
+            {effort.emoji} {lang==="en" ? effort.labelEn : effort.label}
+          </span>
+        ) : <span />}
+        <span style={{ fontSize:12 }}>{CUISINE_FLAG[food.cuisine] ?? ""}</span>
       </div>
- 
+
       <div style={{ fontSize:22, marginBottom:5 }}>{food.emoji}</div>
       <div style={{ fontSize:12, fontWeight:500, color:tokens.cocoa,
         marginBottom:2, lineHeight:1.3 }}>
@@ -235,21 +228,33 @@ const { t, lang } = useApp()
       <div style={{ fontSize:10, color:tokens.stone, marginTop:2 }}>
         P {food.protein}g · C {food.carb}g · F {food.fat}g
       </div>
- 
-      {/* Hormone note */}
-      {food.hormoneNote && (
-        <div style={{
-          marginTop:6, fontSize:10, color:tag.color,
-          background:tag.bg, borderRadius:6, padding:"3px 6px",
-          lineHeight:1.4,
-        }}>
-          {lang==="en" ? (food.hormoneNoteEn??food.hormoneNote) : food.hormoneNote}
+
+      {/* Nutrition facts (≥20% Thai RDI) */}
+      {facts.length > 0 && (
+        <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginTop:6 }}>
+          {facts.map(f => (
+            <span key={f.key} style={{
+              fontSize:10, color:tokens.sageDk, background:tokens.sageLt,
+              borderRadius:6, padding:"3px 6px", lineHeight:1.3,
+            }}>
+              {lang==="en" ? f.labelEn : f.label} · {f.amount} {f.unit}
+            </span>
+          ))}
         </div>
       )}
- 
-      {/* Add button */}
+
+      {/* Treat: neutral portion info, no warning */}
+      {treat && (
+        <div style={{ marginTop:6, fontSize:10, color:tokens.cocoaMid,
+          background:tokens.creamDeep, borderRadius:6, padding:"3px 6px", lineHeight:1.4 }}>
+          {lang==="en" ? treat.labelEn : treat.label}
+        </div>
+      )}
+
+      {/* Add button — ดันลงล่างสุดให้การ์ดสูงเท่ากัน และเว้นระยะจากป้าย */}
+      <div style={{ marginTop:"auto", paddingTop:8 }}>
       <button style={{
-        marginTop:8, width:"100%", padding:"6px",
+        width:"100%", padding:"6px",
         border:`1px solid ${isAdded ? tokens.sage : tokens.border}`,
         borderRadius:8,
         background: isAdded ? tokens.sage : "transparent",
@@ -260,10 +265,21 @@ const { t, lang } = useApp()
       }}>
         {isAdded ? "✓ " + t("common.add") : "+ " + t("common.add")}
       </button>
+      </div>
     </div>
   )
 }
- 
+
+/* ── Quick filters — ใช้ field ใหม่ใน foodDatabase.js ──
+   มังสวิรัติ: นับเฉพาะ diet.vegetarian === true (ไม่แน่ใจ = ไม่แสดง) */
+const QUICK_FILTERS = [
+  { id:"ready",      emoji:"🛒", label:"ซื้อได้เลย",  labelEn:"Ready to buy", test:f => f.effort === "ready" },
+  { id:"vegetarian", emoji:"🌱", label:"มังสวิรัติ",  labelEn:"Vegetarian",   test:f => f.diet?.vegetarian === true },
+  { id:"noPork",     emoji:"🚫", label:"ไม่มีหมู",    labelEn:"No pork",      test:f => f.diet?.noPork === true },
+  { id:"protein",    emoji:"💪", label:"โปรตีนสูง",   labelEn:"High protein", test:f => getNutrientFacts(f).some(x => x.key==="protein" && x.level==="high") },
+  { id:"fiber",      emoji:"🌾", label:"ใยอาหารสูง",  labelEn:"High fiber",   test:f => getNutrientFacts(f).some(x => x.key==="fiber" && x.level==="high") },
+]
+
 /* ── Filter Chip ── */
 function FilterChip({ label, emoji, active, onClick, tokens }) {
   return (
@@ -291,21 +307,25 @@ export default function Tracker() {
     user, cartItems, toggleCartItem,
     todayEntries, totalCal, totalProtein, totalCarb, totalFat,
     deleteDiaryEntry,
-    tokens, currentPhase, t, lang,
+    tokens, t, lang,
   } = useApp()
  
   const [search,   setSearch  ] = useState("")
   const [cuisine,  setCuisine ] = useState("all")
   const [category, setCategory] = useState("all")
-  const [showPhaseOnly, setShowPhaseOnly] = useState(false)
+  const [quick,    setQuick   ] = useState([])   // id ของ QUICK_FILTERS ที่เลือก (AND กัน)
+
+  function toggleQuick(id) {
+    setQuick(q => q.includes(id) ? q.filter(x => x !== id) : [...q, id])
+  }
  
   const handleSearch = useCallback(v => setSearch(v), [])
  
   /* Filter foods */
-  const filtered = searchFoods(search, cuisine, category).filter(f => {
-    if (!showPhaseOnly) return true
-    return f.phase?.includes(user.currentPhase) || f.hormoneTag === "boost"
-  })
+  const activeQuick = QUICK_FILTERS.filter(q => quick.includes(q.id))
+  const filtered = searchFoods(search, cuisine, category)
+    .filter(f => activeQuick.every(q => q.test(f)))
+  const hasEstimates = filtered.some(f => !f.source || f.source.ref === "estimate")
  
   const cartNames = new Set(cartItems.map(f => f.name))
   const remaining = Math.max(0, user.targetCal - totalCal)
@@ -409,36 +429,34 @@ export default function Tracker() {
           ))}
         </div>
  
-        {/* Phase filter toggle */}
-        <div style={{ padding:"8px 16px 0", display:"flex", gap:8, alignItems:"center" }}>
-          <div onClick={() => setShowPhaseOnly(v => !v)} style={{
-            display:"flex", alignItems:"center", gap:6, cursor:"pointer",
-            padding:"6px 12px",
-            background: showPhaseOnly ? currentPhase.colorLt : tokens.creamSoft,
-            border: `1px solid ${showPhaseOnly ? currentPhase.color : tokens.border}`,
-            borderRadius:999, transition:"all .2s",
-          }}>
-            <div style={{
-              width:14, height:14, borderRadius:3,
-              border: `1.5px solid ${showPhaseOnly ? currentPhase.color : tokens.stone}`,
-              background: showPhaseOnly ? currentPhase.color : "transparent",
-              display:"flex", alignItems:"center", justifyContent:"center",
-              transition:"all .2s", flexShrink:0,
-            }}>
-              {showPhaseOnly && <span style={{ fontSize:9, color:"white", lineHeight:1 }}>✓</span>}
-            </div>
-            <span style={{
-              fontSize:12, fontWeight:500,
-              color: showPhaseOnly ? currentPhase.textClr : tokens.stone,
-            }}>
-              {currentPhase.emoji} {lang==="en" ? `${currentPhase.label} phase only` : `แสดงเฉพาะเมนูเฟส ${currentPhase.label}`}
-            </span>
-          </div>
-          <span style={{ fontSize:11, color:tokens.stone }}>
-            {filtered.length} {lang==="en" ? "items" : "รายการ"}
-          </span>
+        {/* Quick filters */}
+        <div style={{ display:"flex", gap:6, padding:"8px 16px 0", overflowX:"auto",
+          msOverflowStyle:"none", scrollbarWidth:"none", alignItems:"center" }}>
+          {QUICK_FILTERS.map(q => {
+            const on = quick.includes(q.id)
+            return (
+              <button key={q.id} onClick={() => toggleQuick(q.id)} aria-pressed={on} style={{
+                flexShrink:0, display:"flex", alignItems:"center", gap:4,
+                padding:"6px 11px", borderRadius:999, whiteSpace:"nowrap",
+                border:`1px solid ${on ? tokens.sage : tokens.border}`,
+                background: on ? tokens.sageLt : tokens.creamSoft,
+                color: on ? tokens.sageDk : tokens.stone,
+                fontSize:12, fontWeight:500, cursor:"pointer",
+                fontFamily:"'DM Sans',sans-serif", transition:"all .15s",
+              }}>
+                <span style={{ fontSize:12 }}>{q.emoji}</span>
+                {lang==="en" ? q.labelEn : q.label}
+              </button>
+            )
+          })}
         </div>
- 
+        <div style={{ padding:"6px 16px 0", fontSize:11, color:tokens.stone }}>
+          {filtered.length} {lang==="en" ? "items" : "รายการ"}
+          {quick.includes("vegetarian") && (lang==="en"
+            ? " · only dishes known to be meat-free (eggs/dairy allowed)"
+            : " · เฉพาะเมนูที่แน่ใจว่าไม่มีเนื้อสัตว์ (กินไข่/นมได้)")}
+        </div>
+
         {/* Food Grid */}
         {filtered.length === 0 ? (
           <div style={{ padding:"40px 16px", textAlign:"center",
@@ -456,7 +474,6 @@ export default function Tracker() {
                 key={food.id}
                 food={food}
                 isAdded={cartNames.has(food.name)}
-                currentPhaseKey={user.currentPhase}
                 onToggle={toggleCartItem}
                 tokens={tokens}
               />
@@ -464,6 +481,15 @@ export default function Tracker() {
           </div>
         )}
  
+        {/* ความโปร่งใสของข้อมูล */}
+        {hasEstimates && (
+          <div style={{ margin:"12px 16px 0", fontSize:10.5, color:tokens.stone, lineHeight:1.6 }}>
+            {lang==="en"
+              ? "ⓘ Nutrition values are estimates and haven't been checked against the Thai Food Composition Table yet. \"High\" labels mean at least 20% of the Thai RDI per serving."
+              : "ⓘ ค่าโภชนาการเป็นค่าประมาณ ยังไม่ได้ตรวจกับตารางคุณค่าทางโภชนาการอาหารไทย ป้าย \"สูง\" หมายถึงได้อย่างน้อย 20% ของปริมาณที่ควรได้รับต่อวัน (Thai RDI) ต่อ 1 หน่วยบริโภค"}
+          </div>
+        )}
+
         <div style={{ height:16 }} />
       </div>
     </ScreenWrapper>

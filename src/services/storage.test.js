@@ -71,11 +71,13 @@ test("readJSON ทนต่อ JSON เสีย", () => {
   assert.deepEqual(readJSON("x", []), [])
 })
 
-test("clearHealthData ลบเฉพาะข้อมูลสุขภาพ รวม moodlogs", () => {
+test("clearHealthData ลบเฉพาะข้อมูลสุขภาพ รวม moodlogs และ dailyLogs", () => {
   writeJSON(STORAGE_KEYS.periodLogs, [1])
   writeJSON(STORAGE_KEYS.moodLogs, [1])
+  writeJSON(STORAGE_KEYS.dailyLogs, { "2026-11-07": {} })
   writeJSON(STORAGE_KEYS.user, { name: "a" })
   clearHealthData()
+  assert.equal(store.has(STORAGE_KEYS.dailyLogs), false)
   assert.equal(store.has(STORAGE_KEYS.periodLogs), false)
   assert.equal(store.has(STORAGE_KEYS.moodLogs), false)
   assert.equal(store.has(STORAGE_KEYS.user), true)
