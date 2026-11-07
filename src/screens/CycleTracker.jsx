@@ -1,54 +1,25 @@
-
 import { useState, useMemo } from "react"
 import { useApp, ScreenWrapper } from "../App.jsx"
+import {
+  getCycleLengths, sortPeriodLogs,
+  todayKey, addDays, daysBetween, formatThaiDate, parseDateKey, toDateKey,
+} from "../features/cycle/cycleCalculations.js"
+import {
+  addPeriodLog, updatePeriodLog, deletePeriodLog,
+  getOpenPeriod, normalizeCycleSettings,
+} from "../services/storage.js"
 
 /* ═══════════════════════════════════════════════════
-   CYCLE TRACKER SCREEN
-   Layout:
-   ┌─ Header ────────────────────────────────────────┐
-   ├─ CurrentPhaseCard ──────────────────────────────┤
-   │  phase · day count · countdown                  │
-   ├─ MiniCalendar ──────────────────────────────────┤
-   │  กดวันแรกของประจำเดือน                           │
-   ├─ CycleHistory ──────────────────────────────────┤
-   │  รอบที่ผ่านมา + ความยาวรอบ                       │
-   ├─ PhaseTimeline ─────────────────────────────────┤
-   │  วิซวลแสดง 4 เฟสของรอบนี้                        │
-   └─────────────────────────────────────────────────┘
+   CYCLE TRACKER SCREEN (Sprint 1)
+   ┌─ Header ──────────────────────────────────────┐
+   ├─ EmptyState  (ยังไม่เคยบันทึก)                  │
+   │  หรือ StatusCard (เฟส · รอบถัดไป · ไข่ตก · ความแม่นยำ) │
+   ├─ CycleCalendar  (บันทึกจริง + ช่วงคาดการณ์)       │
+   ├─ PeriodForm     (เพิ่ม / แก้ไข / ลบ)             │
+   ├─ CycleHistory                                  │
+   └─ CycleSettings  (ใช้เมื่อยังมีประวัติไม่พอ)          │
+   Logic ทั้งหมดอยู่ใน cycleCalculations.js + storage.js
 ═══════════════════════════════════════════════════ */
-
-/* ── Phase calculation from cycle day ── */
-export function calcPhase(cycleDay, cycleLength = 28) {
-  const d = ((cycleDay - 1) % cycleLength) + 1
-  if (d <= 5)  return { key: "menstrual",   day: d,     daysLeft: 5  - d + 1 }
-  if (d <= 13) return { key: "follicular",  day: d - 5, daysLeft: 13 - d + 1 }
-  if (d <= 16) return { key: "ovulation",   day: d - 13,daysLeft: 16 - d + 1 }
-  return              { key: "luteal",      day: d - 16,daysLeft: cycleLength - d + 1 }
-}
-
-/* ── Days since a date ── */
-function daysSince(dateStr) {
-  const d = new Date(dateStr)
-  const now = new Date()
-  d.setHours(0,0,0,0); now.setHours(0,0,0,0)
-  return Math.floor((now - d) / 86400000)
-}
-
-/* ── Format date to Thai ── */
-function toThaiDate(dateStr) {
-  const d = new Date(dateStr)
-  const mo = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.",
-              "ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."]
-  return `${d.getDate()} ${mo[d.getMonth()]} ${d.getFullYear() + 543 - 2500 + 68}`
-}
-
-/* ── Calendar helpers ── */
-function getDaysInMonth(year, month) {
-  return new Date(year, month + 1, 0).getDate()
-}
-function getFirstDayOfWeek(year, month) {
-  return new Date(year, month, 1).getDay()
-}
 
 const THAI_MONTHS = [
   "มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน",
@@ -56,276 +27,297 @@ const THAI_MONTHS = [
 ]
 const DAYS_SHORT = ["อา","จ","อ","พ","พฤ","ศ","ส"]
 
+const LATE_PHASE = { key:"late", label:"เลยกำหนด", emoji:"⏳" }
+
+/* ── Shared styles ── */
+function useStyles(tokens) {
+  return {
+    card: {
+      margin:"14px 16px 0", background:tokens.creamSoft, borderRadius:20,
+      border:`1px solid ${tokens.border}`, padding:"16px 18px",
+    },
+    title: { fontFamily:"'Playfair Display',serif", fontSize:17, color:tokens.cocoa, marginBottom:10 },
+    label: { fontSize:11, color:tokens.stone, marginBottom:4, display:"block" },
+    input: {
+      width:"100%", padding:"10px 12px", borderRadius:12, border:`1px solid ${tokens.border}`,
+      background:"white", fontSize:14, color:tokens.cocoa, fontFamily:"inherit",
+    },
+    btnPrimary: {
+      padding:"11px 16px", borderRadius:999, border:"none", background:tokens.cocoa,
+      color:tokens.cream, fontSize:13, fontWeight:500, cursor:"pointer", fontFamily:"inherit",
+    },
+    btnGhost: {
+      padding:"10px 14px", borderRadius:999, border:`1px solid ${tokens.border}`,
+      background:"transparent", color:tokens.cocoaMid, fontSize:13, cursor:"pointer", fontFamily:"inherit",
+    },
+    note: { fontSize:11, color:tokens.stone, lineHeight:1.6 },
+  }
+}
+
 /* ═══════════════════════════════════════════════════
-   CURRENT PHASE CARD
+   EMPTY STATE
 ═══════════════════════════════════════════════════ */
-function CurrentPhaseCard({ cycleDay, lastPeriodDate, cycleLength, PHASES, tokens }) {
-  const phase = calcPhase(cycleDay, cycleLength)
-  const p     = PHASES[phase.key]
-
-  const nextPeriodDays = cycleLength - cycleDay + 1
-  const ovulationDay   = Math.round(cycleLength / 2) - 2
-  const daysToOvul     = ovulationDay - cycleDay
-
+function EmptyState({ onStart, tokens, s }) {
   return (
-    <div className="fade-up" style={{
-      margin: "14px 16px 0",
-      background: p.color,
-      borderRadius: 22,
-      padding: "18px 20px 16px",
-      color: "white",
-      position: "relative",
-      overflow: "hidden",
-    }}>
-      <div style={{ position:"absolute", top:-50, right:-40, width:150, height:150, borderRadius:"50%", background:"rgba(255,255,255,.08)", pointerEvents:"none" }} />
-
-      <div style={{ fontSize:10, letterSpacing:".1em", textTransform:"uppercase", opacity:.8, marginBottom:4 }}>
-        เฟสปัจจุบัน
-      </div>
-      <div style={{ fontFamily:"'Playfair Display',serif", fontSize:26, marginBottom:5 }}>
-        {p.emoji} {p.label}
-      </div>
-      <div style={{ fontSize:12, opacity:.85, lineHeight:1.55, marginBottom:12 }}>
-        วันที่ {cycleDay} ของรอบ · อีก {phase.daysLeft} วันเปลี่ยนเฟส
-      </div>
-
-      {/* Stats row */}
-      <div style={{
-        display:"flex", gap:0,
-        paddingTop:12,
-        borderTop:"1px solid rgba(255,255,255,.2)",
-      }}>
-        <div style={{ flex:1, textAlign:"center" }}>
-          <div style={{ fontSize:20, fontWeight:500 }}>{phase.daysLeft}</div>
-          <div style={{ fontSize:9, opacity:.75, marginTop:2 }}>วันในเฟสนี้</div>
-        </div>
-        <div style={{ flex:1, textAlign:"center", borderLeft:"1px solid rgba(255,255,255,.2)" }}>
-          <div style={{ fontSize:20, fontWeight:500 }}>{Math.max(0, daysToOvul)}</div>
-          <div style={{ fontSize:9, opacity:.75, marginTop:2 }}>วันถึง Ovulation</div>
-        </div>
-        <div style={{ flex:1, textAlign:"center", borderLeft:"1px solid rgba(255,255,255,.2)" }}>
-          <div style={{ fontSize:20, fontWeight:500 }}>{nextPeriodDays}</div>
-          <div style={{ fontSize:9, opacity:.75, marginTop:2 }}>วันถึงรอบหน้า</div>
-        </div>
-      </div>
+    <div className="fade-up" style={{ ...s.card, textAlign:"center", padding:"26px 22px" }}>
+      <div style={{ fontSize:34, marginBottom:8 }}>🌙</div>
+      <div style={s.title}>เริ่มบันทึกรอบเดือน</div>
+      <p style={{ ...s.note, fontSize:12.5, color:tokens.cocoaMid, marginBottom:16 }}>
+        บันทึกวันแรกของประจำเดือนครั้งล่าสุด แอปจะค่อย ๆ เรียนรู้ความยาวรอบจากข้อมูลของคุณเอง
+        ถ้ายังไม่สะดวก ใช้บันทึกอาหารและอารมณ์ได้ตามปกติ
+      </p>
+      <button style={s.btnPrimary} onClick={onStart}>+ บันทึกวันแรกของประจำเดือน</button>
     </div>
   )
 }
 
 /* ═══════════════════════════════════════════════════
-   PHASE TIMELINE BAR
+   STATUS CARD
 ═══════════════════════════════════════════════════ */
-function PhaseTimeline({ cycleDay, cycleLength, PHASES, tokens }) {
-  const phases = [
-    { key:"menstrual",  flex:5  },
-    { key:"follicular", flex:8  },
-    { key:"ovulation",  flex:3  },
-    { key:"luteal",     flex:cycleLength - 16 },
-  ]
-  /* position of current day marker */
-  const markerPct = ((cycleDay - 1) / cycleLength) * 100
+function confidenceText(c) {
+  if (c.source === "history") return `คำนวณจาก ${c.sampleSize} รอบที่คุณบันทึก`
+  if (c.source === "setting") return "ใช้ความยาวรอบที่คุณตั้งไว้ · บันทึกครบ 2 รอบเพื่อให้แม่นขึ้น"
+  return "ใช้ค่าเริ่มต้น 28 วัน · บันทึกครบ 2 รอบเพื่อให้แม่นขึ้น"
+}
+
+function StatusCard({ snap, openPeriod, onEndPeriod, PHASES, tokens, s }) {
+  const phase = snap.phase === "late" ? LATE_PHASE : PHASES[snap.phase]
+  const color = snap.phase === "late" ? tokens.stone : phase.color
+  const { nextPeriod, ovulation, confidence } = snap
+  const days = snap.daysUntilNextPeriod
+
+  const nextLine =
+    days > 0  ? `คาดว่าประจำเดือนจะมาในอีกประมาณ ${days} วัน` :
+    days === 0 ? "คาดว่าประจำเดือนจะมาวันนี้" :
+                 `เลยวันที่คาดไว้ ${-days} วัน — รอบเดือนคลาดเคลื่อนได้เป็นปกติ`
+
+  const showOvulation = daysBetween(todayKey(), ovulation.fertileEnd) >= 0
 
   return (
     <div className="fade-up" style={{
-      margin:"10px 16px 0",
-      background:tokens.creamSoft,
-      border:`1px solid ${tokens.borderLt}`,
-      borderRadius:22,
-      padding:"14px 16px",
+      margin:"14px 16px 0", background:color, borderRadius:22, padding:"18px 20px 16px",
+      color:"white", position:"relative", overflow:"hidden",
     }}>
-      <div style={{ fontSize:12, fontWeight:500, color:tokens.cocoa, marginBottom:10 }}>
-        Timeline รอบนี้
-      </div>
+      <div style={{ position:"absolute", top:-50, right:-40, width:150, height:150, borderRadius:"50%",
+        background:"rgba(255,255,255,.08)", pointerEvents:"none" }} />
 
-      {/* Bar */}
-      <div style={{ position:"relative", marginBottom:8 }}>
-        <div style={{ display:"flex", height:12, borderRadius:6, overflow:"hidden", gap:2 }}>
-          {phases.map(ph => (
-            <div key={ph.key} style={{
-              flex: ph.flex,
-              background: PHASES[ph.key].color,
-              opacity: .75,
-            }} />
-          ))}
-        </div>
-        {/* Day marker */}
-        <div style={{
-          position:"absolute",
-          left:`${markerPct}%`,
-          top:-3,
-          transform:"translateX(-50%)",
-          width:4, height:18,
-          background:tokens.cocoa,
-          borderRadius:2,
-          boxShadow:`0 0 0 2px ${tokens.creamSoft}`,
-        }} />
+      <div style={{ fontSize:10, letterSpacing:".1em", textTransform:"uppercase", opacity:.85, marginBottom:4 }}>
+        วันที่ {snap.cycleDay} ของรอบ · รอบเฉลี่ย {snap.cycleLength} วัน
       </div>
+      <div style={{ fontFamily:"'Playfair Display',serif", fontSize:26, marginBottom:6 }}>
+        {phase.emoji} {phase.label}
+      </div>
+      <div style={{ fontSize:12.5, lineHeight:1.55, marginBottom:12, opacity:.95 }}>{nextLine}</div>
 
-      {/* Phase labels */}
-      <div style={{ display:"flex", gap:2 }}>
-        {phases.map(ph => (
-          <div key={ph.key} style={{
-            flex: ph.flex,
-            textAlign:"center",
-            fontSize:8,
-            color:tokens.stone,
-            lineHeight:1.3,
-          }}>
-            {PHASES[ph.key].emoji}
+      <div style={{ display:"flex", paddingTop:12, borderTop:"1px solid rgba(255,255,255,.25)" }}>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:9.5, opacity:.8 }}>รอบถัดไป (ประมาณ)</div>
+          <div style={{ fontSize:14, fontWeight:500, marginTop:2 }}>{formatThaiDate(nextPeriod.date)}</div>
+          <div style={{ fontSize:9.5, opacity:.8, marginTop:2 }}>
+            ช่วง {formatThaiDate(nextPeriod.earliest).replace(/ \d{4}$/, "")} – {formatThaiDate(nextPeriod.latest).replace(/ \d{4}$/, "")}
           </div>
-        ))}
+        </div>
+        {showOvulation && (
+          <div style={{ flex:1, paddingLeft:14, borderLeft:"1px solid rgba(255,255,255,.25)" }}>
+            <div style={{ fontSize:9.5, opacity:.8 }}>ไข่ตก (ประมาณ)</div>
+            <div style={{ fontSize:14, fontWeight:500, marginTop:2 }}>{formatThaiDate(ovulation.date)}</div>
+            <div style={{ fontSize:9.5, opacity:.8, marginTop:2 }}>
+              ช่วงมีโอกาสตั้งครรภ์ {formatThaiDate(ovulation.fertileStart).replace(/ \d{4}$/, "")} – {formatThaiDate(ovulation.fertileEnd).replace(/ \d{4}$/, "")}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Day numbers */}
-      <div style={{
-        display:"flex", justifyContent:"space-between",
-        fontSize:8, color:tokens.stone, marginTop:4,
-      }}>
-        <span>วัน 1</span>
-        <span>วัน {Math.round(cycleLength/4)}</span>
-        <span>วัน {Math.round(cycleLength/2)}</span>
-        <span>วัน {cycleLength}</span>
+      <div style={{ fontSize:10, marginTop:12, opacity:.9, lineHeight:1.55 }}>
+        ⓘ {confidenceText(confidence)}
+        {confidence.irregular && <><br/>รอบของคุณยาวไม่เท่ากันมาก ช่วงคาดการณ์จึงกว้างกว่าปกติ</>}
+        <br/>การคาดการณ์จากปฏิทินไม่แม่นพอสำหรับใช้คุมกำเนิด
       </div>
+
+      {openPeriod && (
+        <button onClick={onEndPeriod} style={{
+          marginTop:12, width:"100%", padding:"10px", borderRadius:999, border:"none",
+          background:"rgba(255,255,255,.92)", color:tokens.cocoa, fontSize:13, fontWeight:500,
+          cursor:"pointer", fontFamily:"inherit",
+        }}>
+          ประจำเดือนหมดแล้ววันนี้
+        </button>
+      )}
     </div>
   )
 }
 
 /* ═══════════════════════════════════════════════════
-   MINI CALENDAR
+   CALENDAR — บันทึกจริง (ทึบ) · คาดการณ์ (เส้นประ) · ไข่ตก (จุด)
 ═══════════════════════════════════════════════════ */
-function MiniCalendar({ selectedDate, onSelect, cycleStartDate, cycleLength, tokens }) {
-  const today = new Date()
-  const [viewYear,  setViewYear ] = useState(today.getFullYear())
-  const [viewMonth, setViewMonth] = useState(today.getMonth())
+function buildDayMarks(logs, snap) {
+  const today = todayKey()
+  const logged = new Set()
+  logs.forEach(l => {
+    const end = l.endDate ?? (() => {
+      const assumed = addDays(l.startDate, (snap?.periodLength ?? 5) - 1)
+      return assumed < today ? assumed : today
+    })()
+    for (let k = l.startDate; k <= end; k = addDays(k, 1)) logged.add(k)
+  })
 
-  const daysInMonth  = getDaysInMonth(viewYear, viewMonth)
-  const firstDayOfWeek = getFirstDayOfWeek(viewYear, viewMonth)
-  const cells = Array(firstDayOfWeek).fill(null)
-    .concat(Array.from({ length: daysInMonth }, (_, i) => i + 1))
-
-  /* Determine phase color for each day */
-  function getDayStyle(day) {
-    if (!day) return {}
-    const date = new Date(viewYear, viewMonth, day)
-    date.setHours(0,0,0,0)
-    const todayDate = new Date(); todayDate.setHours(0,0,0,0)
-    const selDate   = selectedDate ? new Date(selectedDate) : null
-    if (selDate) selDate.setHours(0,0,0,0)
-
-    const isToday    = date.getTime() === todayDate.getTime()
-    const isSelected = selDate && date.getTime() === selDate.getTime()
-    const isFuture   = date > todayDate
-
-    let phaseBg = "transparent"
-    if (cycleStartDate && !isFuture) {
-      const start = new Date(cycleStartDate); start.setHours(0,0,0,0)
-      const diff  = Math.floor((date - start) / 86400000)
-      if (diff >= 0) {
-        const cd = (diff % cycleLength) + 1
-        const ph = calcPhase(cd, cycleLength)
-        const PHASE_COLORS = {
-          menstrual:"#9EB0C4", follicular:"#A8C4A0",
-          ovulation:"#C4899A", luteal:"#C4A882",
-        }
-        phaseBg = PHASE_COLORS[ph.key] + "35"
-      }
+  const predicted = new Set()
+  const fertile = new Set()
+  let ovulationDay = null
+  if (snap) {
+    for (let i = 0; i < snap.periodLength; i++) {
+      const k = addDays(snap.nextPeriod.date, i)
+      if (k > today) predicted.add(k)
     }
+    for (let k = snap.ovulation.fertileStart; k <= snap.ovulation.fertileEnd; k = addDays(k, 1)) {
+      if (k >= today) fertile.add(k)
+    }
+    if (snap.ovulation.date >= today) ovulationDay = snap.ovulation.date
+  }
+  return { logged, predicted, fertile, ovulationDay, today }
+}
 
-    return { isToday, isSelected, phaseBg, isFuture }
+function CycleCalendar({ logs, snap, onPickDate, tokens, s }) {
+  const now = new Date()
+  const [view, setView] = useState({ y: now.getFullYear(), m: now.getMonth() })
+  const marks = useMemo(() => buildDayMarks(logs, snap), [logs, snap])
+
+  const first = new Date(view.y, view.m, 1)
+  const offset = first.getDay()
+  const total = new Date(view.y, view.m + 1, 0).getDate()
+  const cells = [...Array(offset).fill(null), ...Array.from({ length: total }, (_, i) => i + 1)]
+
+  function shift(n) {
+    const d = new Date(view.y, view.m + n, 1)
+    setView({ y: d.getFullYear(), m: d.getMonth() })
   }
 
-  function prevMonth() {
-    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1) }
-    else setViewMonth(m => m - 1)
-  }
-  function nextMonth() {
-    const todayM = today.getMonth(); const todayY = today.getFullYear()
-    if (viewYear > todayY || (viewYear === todayY && viewMonth >= todayM)) return
-    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1) }
-    else setViewMonth(m => m + 1)
-  }
+  const navBtn = { ...s.btnGhost, padding:"4px 12px", fontSize:15, lineHeight:1 }
 
   return (
-    <div className="fade-up" style={{
-      margin:"10px 16px 0",
-      background:tokens.creamSoft,
-      border:`1px solid ${tokens.borderLt}`,
-      borderRadius:22,
-      padding:"14px 16px",
-    }}>
-      <div style={{ fontSize:12, fontWeight:500, color:tokens.cocoa, marginBottom:2 }}>
-        บันทึกวันแรกของรอบ
-      </div>
-      <div style={{ fontSize:11, color:tokens.stone, marginBottom:12 }}>
-        กดวันที่ประจำเดือนมาวันแรก
+    <div className="fade-up" style={s.card}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
+        <button style={navBtn} onClick={() => shift(-1)} aria-label="เดือนก่อน">‹</button>
+        <div style={{ ...s.title, marginBottom:0 }}>{THAI_MONTHS[view.m]} {view.y + 543}</div>
+        <button style={navBtn} onClick={() => shift(1)} aria-label="เดือนถัดไป">›</button>
       </div>
 
-      {/* Month nav */}
-      <div style={{
-        display:"flex", justifyContent:"space-between", alignItems:"center",
-        marginBottom:10,
-      }}>
-        <button onClick={prevMonth} style={{ background:"none", border:"none", cursor:"pointer", fontSize:16, color:tokens.stone, padding:"4px 8px" }}>‹</button>
-        <span style={{ fontSize:13, fontWeight:500, color:tokens.cocoa }}>
-          {THAI_MONTHS[viewMonth]} {viewYear + 543}
-        </span>
-        <button onClick={nextMonth} style={{ background:"none", border:"none", cursor:"pointer", fontSize:16, color:tokens.stone, padding:"4px 8px" }}>›</button>
-      </div>
-
-      {/* Day headers */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", marginBottom:4 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:4, textAlign:"center" }}>
         {DAYS_SHORT.map(d => (
-          <div key={d} style={{ textAlign:"center", fontSize:9, color:tokens.stone, padding:"2px 0" }}>{d}</div>
+          <div key={d} style={{ fontSize:10, color:tokens.stone, paddingBottom:4 }}>{d}</div>
         ))}
-      </div>
-
-      {/* Day cells */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:2 }}>
         {cells.map((day, i) => {
-          if (!day) return <div key={`empty-${i}`} />
-          const { isToday, isSelected, phaseBg, isFuture } = getDayStyle(day)
+          if (!day) return <div key={`e${i}`} />
+          const key = toDateKey(new Date(view.y, view.m, day))
+          const isLogged    = marks.logged.has(key)
+          const isPredicted = marks.predicted.has(key)
+          const isFertile   = marks.fertile.has(key)
+          const isOvulation = marks.ovulationDay === key
+          const isToday     = marks.today === key
+          const isFuture    = key > marks.today
+
           return (
-            <div
-              key={day}
-              onClick={() => !isFuture && onSelect(`${viewYear}-${String(viewMonth+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`)}
+            <button
+              key={key}
+              disabled={isFuture}
+              onClick={() => onPickDate(key)}
+              aria-label={`${day} ${THAI_MONTHS[view.m]}${isLogged ? " มีประจำเดือน" : ""}`}
               style={{
-                aspectRatio:"1",
-                display:"flex", alignItems:"center", justifyContent:"center",
-                fontSize:11,
-                borderRadius:8,
-                cursor: isFuture ? "default" : "pointer",
-                fontWeight: isToday ? 500 : 400,
-                background: isSelected ? tokens.ovulation
-                          : phaseBg,
-                color: isSelected ? "white"
-                     : isFuture   ? tokens.stoneLt
-                     : isToday    ? tokens.cocoa
-                     : tokens.cocoaMid,
-                border: isToday && !isSelected ? `1.5px solid ${tokens.stone}` : "none",
-                transition:"background .15s",
-                opacity: isFuture ? .4 : 1,
-              }}
-            >
+                position:"relative", height:38, borderRadius:12, fontFamily:"inherit", fontSize:13,
+                cursor:isFuture ? "default" : "pointer",
+                background: isLogged ? tokens.menstrual : isFertile ? tokens.ovulationLt : "transparent",
+                color: isLogged ? "white" : isFuture ? tokens.stone : tokens.cocoa,
+                border: isPredicted ? `1.5px dashed ${tokens.menstrual}`
+                      : isToday     ? `1.5px solid ${tokens.cocoa}`
+                      : "1.5px solid transparent",
+                fontWeight: isToday ? 600 : 400,
+              }}>
               {day}
-            </div>
+              {isOvulation && (
+                <span style={{ position:"absolute", bottom:4, left:"50%", transform:"translateX(-50%)",
+                  width:5, height:5, borderRadius:"50%", background:tokens.ovulation }} />
+              )}
+            </button>
           )
         })}
       </div>
 
-      {/* Selected date display */}
-      {selectedDate && (
-        <div style={{
-          marginTop:12, padding:"9px 12px",
-          background:tokens.ovulationLt,
-          borderRadius:10,
-          display:"flex", justifyContent:"space-between", alignItems:"center",
-        }}>
-          <span style={{ fontSize:12, color:"#8B4050" }}>
-            📅 วันแรกที่เลือก
-          </span>
-          <span style={{ fontSize:12, fontWeight:500, color:"#8B4050" }}>
-            {toThaiDate(selectedDate)}
-          </span>
+      <div style={{ display:"flex", flexWrap:"wrap", gap:"6px 14px", marginTop:12, fontSize:10, color:tokens.stone }}>
+        <Legend swatch={{ background:tokens.menstrual }} text="มีประจำเดือน" />
+        <Legend swatch={{ border:`1.5px dashed ${tokens.menstrual}` }} text="คาดว่าจะมา" />
+        <Legend swatch={{ background:tokens.ovulationLt }} text="ช่วงมีโอกาสตั้งครรภ์" />
+        <Legend swatch={{ background:tokens.ovulation, borderRadius:"50%", width:6, height:6 }} text="ไข่ตก (ประมาณ)" />
+      </div>
+      <div style={{ ...s.note, marginTop:8 }}>แตะวันที่เพื่อบันทึกวันแรกของประจำเดือน</div>
+    </div>
+  )
+}
+
+function Legend({ swatch, text }) {
+  return (
+    <span style={{ display:"inline-flex", alignItems:"center", gap:5 }}>
+      <span style={{ width:12, height:12, borderRadius:4, display:"inline-block", ...swatch }} />
+      {text}
+    </span>
+  )
+}
+
+/* ═══════════════════════════════════════════════════
+   PERIOD FORM — เพิ่ม / แก้ไข / ลบ
+═══════════════════════════════════════════════════ */
+function PeriodForm({ form, setForm, error, onSave, onCancel, onDelete, tokens, s }) {
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const today = todayKey()
+  const isEdit = form.mode === "edit"
+
+  return (
+    <div className="fade-up" style={{ ...s.card, borderColor:tokens.lavender }}>
+      <div style={s.title}>{isEdit ? "แก้ไขรอบเดือน" : "บันทึกรอบเดือน"}</div>
+
+      <label style={s.label} htmlFor="pf-start">วันแรกของประจำเดือน</label>
+      <input id="pf-start" type="date" max={today} style={s.input}
+        value={form.startDate}
+        onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} />
+
+      <label style={{ ...s.label, marginTop:12 }} htmlFor="pf-end">วันสุดท้าย</label>
+      <input id="pf-end" type="date" max={today} min={form.startDate || undefined}
+        style={{ ...s.input, opacity: form.ongoing ? .45 : 1 }}
+        disabled={form.ongoing}
+        value={form.ongoing ? "" : form.endDate}
+        onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} />
+
+      <label style={{ display:"flex", alignItems:"center", gap:8, marginTop:10, fontSize:12.5, color:tokens.cocoaMid, cursor:"pointer" }}>
+        <input type="checkbox" checked={form.ongoing}
+          onChange={e => setForm(f => ({ ...f, ongoing: e.target.checked }))} />
+        ยังมีประจำเดือนอยู่ / ยังไม่แน่ใจ
+      </label>
+
+      {error && (
+        <div role="alert" style={{ marginTop:10, fontSize:12, color:"#8B4050", background:tokens.roseLt,
+          padding:"8px 12px", borderRadius:10 }}>
+          {error}
+        </div>
+      )}
+
+      <div style={{ display:"flex", gap:8, marginTop:14 }}>
+        <button style={{ ...s.btnPrimary, flex:1 }} onClick={onSave}>บันทึก</button>
+        <button style={s.btnGhost} onClick={onCancel}>ยกเลิก</button>
+      </div>
+
+      {isEdit && (
+        <div style={{ marginTop:12, textAlign:"center" }}>
+          {confirmDelete ? (
+            <div style={{ fontSize:12, color:tokens.cocoaMid }}>
+              ลบรอบนี้ถาวร?{" "}
+              <button onClick={onDelete} style={{ ...s.btnGhost, padding:"4px 12px", color:"#8B4050", borderColor:"#D9B3BE" }}>ลบ</button>{" "}
+              <button onClick={() => setConfirmDelete(false)} style={{ ...s.btnGhost, padding:"4px 12px" }}>ไม่ลบ</button>
+            </div>
+          ) : (
+            <button onClick={() => setConfirmDelete(true)}
+              style={{ border:"none", background:"none", color:tokens.stone, fontSize:12, textDecoration:"underline", cursor:"pointer", fontFamily:"inherit" }}>
+              ลบรอบนี้
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -333,240 +325,206 @@ function MiniCalendar({ selectedDate, onSelect, cycleStartDate, cycleLength, tok
 }
 
 /* ═══════════════════════════════════════════════════
-   CYCLE HISTORY LIST
+   HISTORY
 ═══════════════════════════════════════════════════ */
-function CycleHistory({ cycles, tokens }) {
-  if (cycles.length === 0) return null
-
-  const avgLength = cycles.length > 1
-    ? Math.round(cycles.slice(0,-1).reduce((s,c) => s + c.length, 0) / (cycles.length - 1))
-    : null
+function CycleHistory({ logs, onEdit, tokens, s }) {
+  const sorted = sortPeriodLogs(logs)
+  if (sorted.length === 0) return null
 
   return (
-    <div className="fade-up" style={{
-      margin:"10px 16px 0",
-      background:tokens.creamSoft,
-      border:`1px solid ${tokens.borderLt}`,
-      borderRadius:22,
-      padding:"14px 16px",
-    }}>
-      <div style={{
-        display:"flex", justifyContent:"space-between", alignItems:"center",
-        marginBottom:10,
-      }}>
-        <span style={{ fontSize:12, fontWeight:500, color:tokens.cocoa }}>ประวัติรอบ</span>
-        {avgLength && (
-          <span style={{
-            fontSize:11, fontWeight:500,
-            padding:"3px 10px",
-            background:tokens.sageLt,
-            color:tokens.sageDk,
-            borderRadius:999,
+    <div className="fade-up" style={s.card}>
+      <div style={s.title}>ประวัติรอบเดือน</div>
+      {sorted.map((l, i) => {
+        const prev = sorted[i + 1]
+        const cycleLen = prev ? daysBetween(prev.startDate, l.startDate) : null
+        const periodLen = l.endDate ? daysBetween(l.startDate, l.endDate) + 1 : null
+        return (
+          <button key={l.id} onClick={() => onEdit(l)} style={{
+            width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between",
+            padding:"11px 0", border:"none", borderTop: i ? `1px solid ${tokens.borderLt}` : "none",
+            background:"none", cursor:"pointer", fontFamily:"inherit", textAlign:"left",
           }}>
-            เฉลี่ย {avgLength} วัน/รอบ
-          </span>
-        )}
-      </div>
-
-      {cycles.map((c, i) => (
-        <div key={i} style={{
-          display:"flex", alignItems:"center", justifyContent:"space-between",
-          padding:"9px 0",
-          borderBottom: i < cycles.length - 1 ? `1px solid ${tokens.borderLt}` : "none",
-        }}>
-          <div>
-            <div style={{ fontSize:12, fontWeight:500, color:tokens.cocoa }}>
-              รอบที่ {cycles.length - i}
-            </div>
-            <div style={{ fontSize:10, color:tokens.stone, marginTop:2 }}>
-              เริ่ม {toThaiDate(c.startDate)}
-            </div>
-          </div>
-          <div style={{ textAlign:"right" }}>
-            {c.length && (
-              <div style={{
-                fontSize:13, fontWeight:500,
-                color: c.length >= 21 && c.length <= 35 ? tokens.sageDk : "#8B4050",
-              }}>
-                {c.length} วัน
+            <div>
+              <div style={{ fontSize:13.5, color:tokens.cocoa }}>
+                {formatThaiDate(l.startDate)}{l.endDate ? ` – ${formatThaiDate(l.endDate)}` : ""}
               </div>
-            )}
-            <div style={{ fontSize:10, color:tokens.stone, marginTop:2 }}>
-              {c.length >= 21 && c.length <= 35 ? "ปกติ" : "ผิดปกติ"}
+              <div style={{ fontSize:11, color:tokens.stone, marginTop:2 }}>
+                {periodLen ? `มีประจำเดือน ${periodLen} วัน` : "ยังไม่ได้บันทึกวันสุดท้าย"}
+                {cycleLen ? ` · รอบยาว ${cycleLen} วัน` : ""}
+              </div>
             </div>
-          </div>
-        </div>
-      ))}
+            <span style={{ fontSize:12, color:tokens.lavenderDk }}>แก้ไข</span>
+          </button>
+        )
+      })}
     </div>
   )
 }
 
 /* ═══════════════════════════════════════════════════
-   LOG BUTTON
+   SETTINGS — ใช้เป็นค่าตั้งต้นจนกว่าจะมีประวัติพอ
 ═══════════════════════════════════════════════════ */
-function LogButton({ selectedDate, onLog, tokens }) {
-  if (!selectedDate) return null
-  return (
-    <div style={{ padding:"10px 16px 0" }}>
-      <button
-        onClick={onLog}
-        style={{
-          width:"100%", padding:"14px",
-          background:tokens.cocoa, color:tokens.cream,
-          border:"none", borderRadius:16,
-          fontSize:14, fontWeight:500,
-          fontFamily:"'DM Sans',sans-serif",
-          cursor:"pointer",
-          transition:"opacity .2s",
-        }}
-        onMouseDown={e => e.currentTarget.style.opacity=".8"}
-        onMouseUp={e   => e.currentTarget.style.opacity="1"}
-      >
-        บันทึกวันแรกของรอบ →
-      </button>
-    </div>
-  )
-}
-
-/* ═══════════════════════════════════════════════════
-   CYCLE TRACKER — main export
-═══════════════════════════════════════════════════ */
-export default function CycleTracker() {
-  const { user, setUser, PHASES, tokens, showToast } = useApp()
-
-  const [selectedDate, setSelectedDate] = useState("")
-  const [cycles,       setCycles      ] = useState(() => {
-    /* seed with one past cycle for demo */
-    const today = new Date()
-    const start = new Date(today)
-    start.setDate(today.getDate() - (user.cycleDay - 1))
-    return [{
-      startDate: start.toISOString().split("T")[0],
-      length:    null,
-    }]
+function CycleSettings({ settings, onSave, hasHistory, tokens, s }) {
+  const [open, setOpen] = useState(false)
+  const [draft, setDraft] = useState({
+    cycleLength:  settings.cycleLength  ?? "",
+    periodLength: settings.periodLength ?? "",
   })
 
-  const currentCycle   = cycles[0]
-  const currentCycleDay = useMemo(() => {
-    if (!currentCycle) return 1
-    return Math.min(user.cycleLength ?? 28, daysSince(currentCycle.startDate) + 1)
-  }, [currentCycle, user.cycleLength])
+  if (!open) {
+    return (
+      <div style={{ margin:"14px 16px 0", textAlign:"center" }}>
+        <button style={s.btnGhost} onClick={() => setOpen(true)}>ตั้งค่าความยาวรอบ</button>
+      </div>
+    )
+  }
 
-  const cycleLength = user.cycleLength ?? 28
+  return (
+    <div className="fade-up" style={s.card}>
+      <div style={s.title}>ตั้งค่าความยาวรอบ</div>
+      <p style={{ ...s.note, marginBottom:12 }}>
+        {hasHistory
+          ? "ตอนนี้แอปใช้ค่าเฉลี่ยจากประวัติของคุณแล้ว ค่าด้านล่างจะใช้เฉพาะเมื่อประวัติไม่พอ"
+          : "ไม่บังคับ — ถ้าไม่รู้ ปล่อยว่างได้ แอปจะเรียนรู้เองเมื่อบันทึกครบ 2 รอบ"}
+      </p>
+      <div style={{ display:"flex", gap:10 }}>
+        <div style={{ flex:1 }}>
+          <label style={s.label} htmlFor="cs-cycle">รอบเดือนยาว (วัน)</label>
+          <input id="cs-cycle" type="number" inputMode="numeric" min="15" max="90" placeholder="เช่น 30"
+            style={s.input} value={draft.cycleLength}
+            onChange={e => setDraft(d => ({ ...d, cycleLength: e.target.value }))} />
+        </div>
+        <div style={{ flex:1 }}>
+          <label style={s.label} htmlFor="cs-period">มีประจำเดือน (วัน)</label>
+          <input id="cs-period" type="number" inputMode="numeric" min="1" max="15" placeholder="เช่น 5"
+            style={s.input} value={draft.periodLength}
+            onChange={e => setDraft(d => ({ ...d, periodLength: e.target.value }))} />
+        </div>
+      </div>
+      <div style={{ display:"flex", gap:8, marginTop:14 }}>
+        <button style={{ ...s.btnPrimary, flex:1 }} onClick={() => { onSave(draft); setOpen(false) }}>บันทึก</button>
+        <button style={s.btnGhost} onClick={() => setOpen(false)}>ปิด</button>
+      </div>
+    </div>
+  )
+}
 
-  function handleLogCycle() {
-    if (!selectedDate) return
-    const newCycleDay = 1
+/* ═══════════════════════════════════════════════════
+   SCREEN
+═══════════════════════════════════════════════════ */
+const EMPTY_FORM = { mode:"add", id:null, startDate:"", endDate:"", ongoing:true }
 
-    /* close out previous cycle */
-    const prev = cycles[0]
-    let updatedCycles = [...cycles]
-    if (prev && !prev.length) {
-      const prevStart = new Date(prev.startDate)
-      const newStart  = new Date(selectedDate)
-      const len = Math.floor((newStart - prevStart) / 86400000)
-      if (len > 0 && len <= 60) {
-        updatedCycles[0] = { ...prev, length: len }
-      }
-    }
+export default function CycleTracker() {
+  // ข้อมูลรอบเดือนอยู่ที่ App.jsx (state เดียวทั้งแอป) — หน้านี้อ่าน/เขียนผ่าน context
+  const {
+    periodLogs: logs, setPeriodLogs: setLogs,
+    cycleSettings: settings, setCycleSettings: setSettings,
+    cycleSnapshot: snap, PHASES, tokens, showToast,
+  } = useApp()
+  const s = useStyles(tokens)
 
-    updatedCycles = [{ startDate: selectedDate, length: null }, ...updatedCycles]
-    setCycles(updatedCycles)
+  const [form,  setForm ] = useState(null)   // null = ปิดฟอร์ม
+  const [error, setError] = useState(null)
 
-    /* update global user phase */
-    const newPhase = calcPhase(newCycleDay, cycleLength)
-    setUser(u => ({
-      ...u,
-      cycleDay:     newCycleDay,
-      currentPhase: newPhase.key,
-    }))
+  // แสดงปุ่ม "หมดแล้ววันนี้" เฉพาะรอบล่าสุดที่ยังไม่ปิดและยังอยู่ในช่วงที่เป็นไปได้
+  const latestOpen = getOpenPeriod(logs)
+  const openPeriod = latestOpen
+    && latestOpen.startDate === snap?.lastStart
+    && daysBetween(latestOpen.startDate, todayKey()) < 15
+    ? latestOpen : null
+  const hasHistory = getCycleLengths(logs).length > 0
 
-    setSelectedDate("")
-    showToast("บันทึกรอบเดือนแล้ว ✓")
+  /* ฟอร์มอยู่บนสุด — เลื่อนขึ้นให้เห็นเมื่อเปิดจากปฏิทินหรือประวัติ */
+  function scrollToTop() {
+    document.querySelector(".scroll-body")?.scrollTo({ top:0, behavior:"smooth" })
+  }
+
+  function openAdd(startDate = todayKey()) {
+    setError(null)
+    setForm({ ...EMPTY_FORM, startDate })
+    scrollToTop()
+  }
+
+  function openEdit(log) {
+    setError(null)
+    setForm({ mode:"edit", id:log.id, startDate:log.startDate, endDate:log.endDate ?? "", ongoing:!log.endDate })
+    scrollToTop()
+  }
+
+  function closeForm() { setForm(null); setError(null) }
+
+  function handleSave() {
+    const entry = { startDate: form.startDate, endDate: form.ongoing || !form.endDate ? null : form.endDate }
+    const result = form.mode === "edit"
+      ? updatePeriodLog(logs, form.id, entry)
+      : addPeriodLog(logs, entry)
+    if (!result.ok) { setError(result.error); return }
+    setLogs(result.logs)
+    closeForm()
+    showToast(form.mode === "edit" ? "แก้ไขแล้ว ✓" : "บันทึกรอบเดือนแล้ว ✓")
+  }
+
+  function handleDelete() {
+    const result = deletePeriodLog(logs, form.id)
+    if (!result.ok) { setError(result.error); return }
+    setLogs(result.logs)
+    closeForm()
+    showToast("ลบรอบแล้ว")
+  }
+
+  function handleEndPeriod() {
+    const result = updatePeriodLog(logs, openPeriod.id, { endDate: todayKey() })
+    if (!result.ok) { showToast(result.error); return }
+    setLogs(result.logs)
+    showToast("บันทึกวันสุดท้ายแล้ว ✓")
+  }
+
+  function handleSaveSettings(draft) {
+    setSettings(normalizeCycleSettings(draft))
+    showToast("บันทึกการตั้งค่าแล้ว ✓")
   }
 
   return (
     <ScreenWrapper>
       {/* Header */}
       <div className="fade-up" style={{
-        background:tokens.creamSoft,
-        padding:"16px 20px 14px",
-        borderBottom:`1px solid ${tokens.borderLt}`,
-        flexShrink:0,
+        background:tokens.creamSoft, padding:"16px 20px 14px",
+        borderBottom:`1px solid ${tokens.borderLt}`, flexShrink:0,
+        display:"flex", alignItems:"flex-end", justifyContent:"space-between",
       }}>
-        <div style={{
-          fontFamily:"'Playfair Display',serif",
-          fontSize:22, color:tokens.cocoa, marginBottom:2,
-        }}>
-          รอบเดือน
+        <div>
+          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:tokens.cocoa, marginBottom:2 }}>
+            รอบเดือน
+          </div>
+          <div style={{ fontSize:12, color:tokens.stone }}>บันทึก ดูประวัติ และคาดการณ์รอบถัดไป</div>
         </div>
-        <div style={{ fontSize:12, color:tokens.stone }}>
-          ติดตามรอบและคำนวณเฟสฮอร์โมนอัตโนมัติ
-        </div>
+        {snap && !form && (
+          <button style={{ ...s.btnPrimary, padding:"8px 14px", fontSize:12 }} onClick={() => openAdd()}>
+            + บันทึก
+          </button>
+        )}
       </div>
 
-      <div className="scroll-body" style={{ flex:1, paddingBottom:90 }}>
-        <CurrentPhaseCard
-          cycleDay={currentCycleDay}
-          lastPeriodDate={currentCycle?.startDate}
-          cycleLength={cycleLength}
-          PHASES={PHASES}
-          tokens={tokens}
-        />
+      <div className="scroll-body" style={{ flex:1, paddingBottom:110 }}>
+        {form && (
+          <PeriodForm form={form} setForm={setForm} error={error}
+            onSave={handleSave} onCancel={closeForm} onDelete={handleDelete}
+            tokens={tokens} s={s} />
+        )}
 
-        <PhaseTimeline
-          cycleDay={currentCycleDay}
-          cycleLength={cycleLength}
-          PHASES={PHASES}
-          tokens={tokens}
-        />
+        {!snap && !form && <EmptyState onStart={() => openAdd()} tokens={tokens} s={s} />}
 
-        <MiniCalendar
-          selectedDate={selectedDate}
-          onSelect={setSelectedDate}
-          cycleStartDate={currentCycle?.startDate}
-          cycleLength={cycleLength}
-          tokens={tokens}
-        />
+        {snap && (
+          <StatusCard snap={snap} openPeriod={openPeriod} onEndPeriod={handleEndPeriod}
+            PHASES={PHASES} tokens={tokens} s={s} />
+        )}
 
-        <LogButton
-          selectedDate={selectedDate}
-          onLog={handleLogCycle}
-          tokens={tokens}
-        />
+        <CycleCalendar logs={logs} snap={snap} onPickDate={openAdd} tokens={tokens} s={s} />
 
-        <CycleHistory cycles={cycles} tokens={tokens} />
+        <CycleHistory logs={logs} onEdit={openEdit} tokens={tokens} s={s} />
 
-        {/* Cycle length adjuster */}
-        <div className="fade-up" style={{
-          margin:"10px 16px 0",
-          background:tokens.creamSoft,
-          border:`1px solid ${tokens.borderLt}`,
-          borderRadius:22, padding:"14px 16px",
-        }}>
-          <div style={{ fontSize:12, fontWeight:500, color:tokens.cocoa, marginBottom:10 }}>
-            ความยาวรอบเฉลี่ย
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-            <input
-              type="range" min={21} max={40} step={1}
-              value={cycleLength}
-              onChange={e => setUser(u => ({ ...u, cycleLength: Number(e.target.value) }))}
-              style={{ flex:1 }}
-            />
-            <span style={{
-              fontSize:16, fontWeight:500, color:tokens.cocoa,
-              minWidth:48, textAlign:"center",
-            }}>
-              {cycleLength} วัน
-            </span>
-          </div>
-          <div style={{ fontSize:11, color:tokens.stone, marginTop:6 }}>
-            รอบปกติ 21–35 วัน · เฉลี่ยทั่วไป 28 วัน
-          </div>
-        </div>
-
-        <div style={{ height:16 }} />
+        <CycleSettings settings={settings} onSave={handleSaveSettings}
+          hasHistory={hasHistory} tokens={tokens} s={s} />
       </div>
     </ScreenWrapper>
   )

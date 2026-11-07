@@ -1,15 +1,17 @@
-import { useState, useEffect, useRef, createContext, useContext } from "react"
+import { useState, useEffect, useRef, useMemo, createContext, useContext } from "react"
 import { getT } from "./translations.js"
-import { useLocalStorage, STORAGE_KEYS } from "./hooks/useLocalStorage.js"
+import { useLocalStorage } from "./hooks/useLocalStorage.js"
+import { STORAGE_KEYS, normalizeCycleSettings } from "./services/storage.js"
+import { getCycleSnapshot } from "./features/cycle/cycleCalculations.js"
 import Onboarding   from "./screens/Onboarding.jsx"
 import Home         from "./screens/Home.jsx"
-import Phases       from "./screens/Phases.jsx"
 import Tracker      from "./screens/Tracker.jsx"
 import Weight       from "./screens/Weight.jsx"
 import Profile      from "./screens/Profile.jsx"
 import Foodcalendar  from "./screens/Foodcalendar.jsx"
 import HormoneQuiz   from "./screens/HormoneQuiz.jsx"
 import MoodTracker   from "./screens/MoodTracker.jsx"
+import CycleTracker  from "./screens/CycleTracker.jsx"
  
 /* ═══════════════════════════════════════════════════
    DESIGN TOKENS — Palette D
@@ -42,34 +44,23 @@ const DEFAULT_USER = {
   currentPhase:"ovulation", cycleDay:14, cycleLength:28,
 }
  
-const DEFAULT_WEIGHT_HISTORY = [
-  { date:"27 มี.ค. 68", value:54.0, change:-0.3 },
-  { date:"19 มี.ค. 68", value:54.3, change:-0.4 },
-  { date:"12 มี.ค. 68", value:54.7, change:-0.2 },
-  { date:"5 มี.ค. 68",  value:54.9, change:-0.3 },
-  { date:"27 ก.พ. 68",  value:55.2, change: null },
-]
+/* ผู้ใช้ใหม่เริ่มจากประวัติว่าง — ไม่ใส่ข้อมูลตัวอย่างลงเครื่องผู้ใช้ */
+const DEFAULT_WEIGHT_HISTORY = []
  
 function todayKey() {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`
 }
  
-const DEFAULT_DIARY = {
-  [todayKey()]: [
-    { id:1, dateKey:todayKey(), emoji:"🥚", name:"ไข่ต้ม + ผักโขมผัด",   cal:320, protein:22, carb:4,  fat:10, meal:"เช้า",    time:"07:15" },
-    { id:2, dateKey:todayKey(), emoji:"☕", name:"กาแฟดำ ไม่หวาน",        cal:5,   protein:0,  carb:0,  fat:0,  meal:"เช้า",    time:"08:30" },
-    { id:3, dateKey:todayKey(), emoji:"🐟", name:"ต้มยำกุ้ง + ข้าวกล้อง", cal:495, protein:28, carb:48, fat:8,  meal:"กลางวัน",time:"12:00" },
-  ],
-}
+const DEFAULT_DIARY = {}
  
 /* ── NAV ── */
 export const NAV_ITEMS = [
   { id:"home",     label:"หน้าหลัก", emoji:"🏠" },
+  { id:"cycle",    label:"รอบเดือน", emoji:"🌙" },
   { id:"calendar", label:"ปฏิทิน",   emoji:"📅" },
   { id:"tracker",  label:"แคลอรี่",  emoji:"🥗" },
   { id:"mood",     label:"อารมณ์",   emoji:"😊" },
-  { id:"weight",   label:"น้ำหนัก",  emoji:"📊" },
   { id:"profile",  label:"โปรไฟล์",  emoji:"👤" },
 ]
  
@@ -167,8 +158,15 @@ function PhoneShell({children}){
 /* ── Bottom nav ── */
 function BottomNav({current,onChange}){
   const { t } = useApp()
-  const NAV_KEYS = ["home","calendar","tracker","mood","weight","profile"]
-  const NAV_EMOJIS = { home:"🏠", calendar:"📅", tracker:"🥗", mood:"😊", weight:"📊", profile:"👤" }
+  /* weight ออกจากเมนูแล้ว (ยังเข้าได้ด้วย navTo("weight")) — แผน 2.0 จะยุบเหลือ 4 แท็บ */
+  const NAV_KEYS = NAV_ITEMS.map(n => n.id)
+  const NAV_EMOJIS = Object.fromEntries(NAV_ITEMS.map(n => [n.id, n.emoji]))
+  /* ถ้ายังไม่มีคำแปลใน translations.js ใช้ label จาก NAV_ITEMS แทน */
+  const navLabel = id => {
+    const key = `nav.${id}`
+    const text = t(key)
+    return text === key ? NAV_ITEMS.find(n => n.id === id)?.label : text
+  }
   return(
     <nav style={{position:"absolute",bottom:0,left:0,right:0,height:82,
       background:"rgba(250,248,245,.97)",borderTop:`1px solid ${tokens.border}`,
@@ -191,7 +189,7 @@ function BottomNav({current,onChange}){
             <span style={{fontSize:9.5,fontWeight:500,
               color:active?tokens.lavenderDk:tokens.stone,
               letterSpacing:".01em",transition:"color .2s"}}>
-              {t(`nav.${id}`)}
+              {navLabel(id)}
             </span>
             <div style={{width:4,height:4,borderRadius:"50%",
               background:active?tokens.lavenderDk:"transparent",transition:"background .2s"}}/>
@@ -253,6 +251,30 @@ export default function App(){
   const [foodLog,       setFoodLog      ] = useLocalStorage(STORAGE_KEYS.foodLog,       [])
   const [cartItems,     setCartItems    ] = useLocalStorage(STORAGE_KEYS.cartItems,     [])
   const [diary,         setDiary        ] = useLocalStorage(STORAGE_KEYS.diary,         DEFAULT_DIARY)
+
+  /* ── Cycle data (Sprint 1) — App เป็นเจ้าของ state เดียว ทุกหน้าอ่านจาก context ── */
+  const [periodLogs,    setPeriodLogs   ] = useLocalStorage(STORAGE_KEYS.periodLogs, [])
+  const [cycleSettings, setCycleSettings] = useLocalStorage(
+    STORAGE_KEYS.cycleSettings,
+    normalizeCycleSettings({ cycleLength: user?.cycleLength }),  // ย้ายค่าเดิมครั้งแรก
+  )
+  const cycleSnapshot = useMemo(
+    () => getCycleSnapshot(periodLogs, cycleSettings),
+    [periodLogs, cycleSettings],
+  )
+
+  /* เฟสและวันของรอบคำนวณจากวันที่จริงเมื่อมีบันทึกประจำเดือน
+     ถ้ายังไม่มี ใช้ค่าเดิมใน user ไปก่อน (Home จะออกแบบสถานะ "ยังไม่รู้รอบ" ใน Sprint ถัดไป)
+     "late" (เลยกำหนด) ยังไม่มีใน PHASES จึงแสดงเป็น luteal */
+  const cycleUser = useMemo(() => {
+    if (!cycleSnapshot) return user
+    return {
+      ...user,
+      cycleDay:     cycleSnapshot.cycleDay,
+      cycleLength:  cycleSnapshot.cycleLength,
+      currentPhase: cycleSnapshot.phase === "late" ? "luteal" : cycleSnapshot.phase,
+    }
+  }, [user, cycleSnapshot])
  
   /* ── Toast ── */
   const [toast,    setToast   ] = useState({ msg:"", visible:false })
@@ -282,7 +304,8 @@ export default function App(){
     const change = parseFloat((value-prev).toFixed(1))
     const now    = new Date()
     const mo     = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."]
-    const dateStr= `${now.getDate()} ${mo[now.getMonth()]} 68`
+    const yy     = String((now.getFullYear() + 543) % 100).padStart(2,"0")   // ปี พ.ศ. 2 หลัก
+    const dateStr= `${now.getDate()} ${mo[now.getMonth()]} ${yy}`
     setWeightHistory(h=>[{ date:dateStr, value, change }, ...h])
     setUser(u=>({ ...u, weight:value }))
     showToast(`บันทึกน้ำหนัก ${value.toFixed(1)} กก. แล้ว ✓`)
@@ -372,7 +395,10 @@ export default function App(){
   /* ── Context ── */
   const t = getT(lang)
   const ctx = {
-    user, setUser,
+    user: cycleUser, setUser,
+    periodLogs, setPeriodLogs,
+    cycleSettings, setCycleSettings,
+    cycleSnapshot,
     weightHistory, logWeight,
     foodLog, setFoodLog,
     cartItems, toggleCartItem,
@@ -380,13 +406,14 @@ export default function App(){
     todayEntries,
     totalCal, totalProtein, totalCarb, totalFat,
     navTo, showToast,
-    currentPhase: PHASES[user.currentPhase] ?? PHASES.ovulation,
+    currentPhase: PHASES[cycleUser.currentPhase] ?? PHASES.ovulation,
     PHASES, tokens,
     lang, setLang, t,
   }
  
   const screens = {
     home:     <Home />,
+    cycle:    <CycleTracker />,
     calendar: <Foodcalendar />,
     tracker:  <Tracker />,
     mood:     <MoodTracker />,

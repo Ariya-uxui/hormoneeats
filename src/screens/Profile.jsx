@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useApp, ScreenWrapper } from "../App.jsx"
-import { clearAppStorage } from "../hooks/useLocalStorage.js"
+import { clearAppStorage, clearHealthData } from "../services/storage.js"
  
 function calcTDEE(weight, height, age, gender, activity) {
   const bmr = gender === "หญิง"
@@ -37,12 +37,6 @@ const GOAL_OPTS = [
   { val:"lose_slow", label:"ลดช้าๆ ยั่งยืน (−250 kcal/วัน)"  },
   { val:"maintain",  label:"รักษาน้ำหนัก"                    },
   { val:"gain",      label:"เพิ่มกล้ามเนื้อ (+300 kcal/วัน)"  },
-]
-const PHASE_OPTS = [
-  { val:"follicular", label:"🌱 Follicular (วัน 1–13)" },
-  { val:"ovulation",  label:"✨ Ovulation (วัน 14–16)" },
-  { val:"luteal",     label:"🍂 Luteal (วัน 17–28)"    },
-  { val:"menstrual",  label:"🌙 Menstrual (วัน 1–5)"   },
 ]
  
 function InfoRow({ label, value, accent, isLast, tokens }) {
@@ -130,7 +124,7 @@ function GoalProgress({ weight, goalWeight, tokens }) {
     </div>
   )
 }
-function ResetConfirm({ onConfirm, onClose, tokens }) {
+function ResetConfirm({ title, desc, actionLabel, onConfirm, onClose, tokens }) {
   return (
     <div onClick={onClose} style={{ position:"absolute", inset:0, zIndex:500,
       background:"rgba(61,46,42,.5)", display:"flex", alignItems:"center",
@@ -139,9 +133,9 @@ function ResetConfirm({ onConfirm, onClose, tokens }) {
         borderRadius:22, padding:"24px 20px", width:"100%" }}>
         <div style={{ fontSize:28, textAlign:"center", marginBottom:12 }}>⚠️</div>
         <div style={{ fontFamily:"'Playfair Display',serif", fontSize:18,
-          color:tokens.cocoa, textAlign:"center", marginBottom:8 }}>รีเซ็ตข้อมูลทั้งหมด?</div>
+          color:tokens.cocoa, textAlign:"center", marginBottom:8 }}>{title}</div>
         <div style={{ fontSize:13, color:tokens.stone, textAlign:"center",
-          lineHeight:1.6, marginBottom:20 }}>ข้อมูลทุกอย่างจะถูกลบ ไม่สามารถกู้คืนได้</div>
+          lineHeight:1.6, marginBottom:20 }}>{desc}</div>
         <div style={{ display:"flex", gap:10 }}>
           <button onClick={onClose} style={{ flex:1, padding:"12px",
             background:"transparent", color:tokens.stone, border:`1px solid ${tokens.border}`,
@@ -150,7 +144,7 @@ function ResetConfirm({ onConfirm, onClose, tokens }) {
           <button onClick={onConfirm} style={{ flex:1, padding:"12px",
             background:"#8B4050", color:"white", border:"none", borderRadius:14,
             fontSize:14, fontWeight:500, fontFamily:"'DM Sans',sans-serif",
-            cursor:"pointer" }}>รีเซ็ต</button>
+            cursor:"pointer" }}>{actionLabel}</button>
         </div>
       </div>
     </div>
@@ -158,9 +152,9 @@ function ResetConfirm({ onConfirm, onClose, tokens }) {
 }
  
 export default function Profile() {
-  const { user, setUser, currentPhase, tokens, showToast, t, lang } = useApp()
+  const { user, setUser, currentPhase, cycleSnapshot, navTo, tokens, showToast, t, lang } = useApp()
   const [editMode,  setEditMode ] = useState(false)
-  const [showReset, setShowReset] = useState(false)
+  const [showReset, setShowReset] = useState(null)   // null | "health" | "all"
   const [form,      setForm     ] = useState({})
  
   function startEdit() {
@@ -173,9 +167,6 @@ export default function Profile() {
       goalWeight:   String(user.goalWeight  ?? 52),
       activity:     String(user.activity    ?? 2),
       goal:         user.goal          ?? "lose_slow",
-      currentPhase: user.currentPhase  ?? "ovulation",
-      cycleDay:     String(user.cycleDay    ?? 14),
-      cycleLength:  String(user.cycleLength ?? 28),
     })
     setEditMode(true)
   }
@@ -187,15 +178,16 @@ export default function Profile() {
   function set(k,v) { setForm(f=>({...f,[k]:v})) }
  
   function handleSave() {
-    setUser({
-      ...user,
-      name:form.name.trim()||user.name, gender:form.gender,
+    /* ใช้ updater เพื่อเขียนทับ user ที่เก็บจริง ไม่ใช่ user ที่ App คำนวณเฟสใส่ให้
+       ข้อมูลรอบเดือนจัดการที่แท็บรอบเดือนแล้ว จึงไม่บันทึก phase/cycleDay จากหน้านี้ */
+    setUser(u => ({
+      ...u,
+      name:form.name.trim()||u.name, gender:form.gender,
       age:+form.age, height:+form.height, weight:+form.weight,
       goalWeight:+form.goalWeight, activity:+form.activity,
-      goal:form.goal, currentPhase:form.currentPhase,
-      cycleDay:+form.cycleDay, cycleLength:+form.cycleLength,
+      goal:form.goal,
       bmi:pBMI, tdee:pTDEE, targetCal:pTarget,
-    })
+    }))
     setEditMode(false)
     showToast("บันทึกโปรไฟล์แล้ว ✓")
   }
@@ -231,7 +223,9 @@ export default function Profile() {
               {editMode ? (form.name||"คุณสาว") : user.name}
             </div>
             <div style={{ fontSize:11, color:tokens.stone }}>
-              {currentPhase.emoji} {currentPhase.label} · {t("profile.cycle_day")} {user.cycleDay}
+              {cycleSnapshot
+                ? <>{currentPhase.emoji} {currentPhase.label} · {t("profile.cycle_day")} {cycleSnapshot.cycleDay}</>
+                : (lang==="en" ? "No period logged yet" : "ยังไม่ได้บันทึกรอบเดือน")}
             </div>
           </div>
           {!editMode
@@ -373,30 +367,14 @@ export default function Profile() {
               </select>
             </div>
  
-            <SecLabel text={lang==="en" ? "Hormone Cycle" : "รอบฮอร์โมน"} tokens={tokens}/>
-            <div style={row}>
-              <label style={lbl}>{t("profile.phase")}</label>
-              <select style={{...inp,cursor:"pointer"}} value={form.currentPhase} onChange={e=>set("currentPhase",e.target.value)}>
-                {PHASE_OPTS.map(o=><option key={o.val} value={o.val}>{o.label}</option>)}
-              </select>
+            <SecLabel text={lang==="en" ? "Cycle" : "รอบเดือน"} tokens={tokens}/>
+            <div style={{...row, fontSize:12.5, color:tokens.cocoaMid, lineHeight:1.6,
+              background:tokens.lavenderLt, borderRadius:12, padding:"12px 14px"}}>
+              {lang==="en"
+                ? "Your cycle phase is now calculated from the periods you log. Manage dates and cycle length in the Cycle tab."
+                : "เฟสและวันของรอบคำนวณจากวันที่ประจำเดือนที่คุณบันทึก จัดการวันที่และความยาวรอบได้ที่แท็บรอบเดือน"}
             </div>
-            <div style={{...row,display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-              <div>
-                <label style={lbl}>{t("profile.cycle_day")}</label>
-                <input style={inp} type="number" min="1" max="40" value={form.cycleDay}
-                  onChange={e=>set("cycleDay",e.target.value)}
-                  onFocus={e=>e.target.style.borderColor=tokens.lavender}
-                  onBlur={e=>e.target.style.borderColor=tokens.border}/>
-              </div>
-              <div>
-                <label style={lbl}>{t("profile.cycle_length")}</label>
-                <input style={inp} type="number" min="21" max="40" value={form.cycleLength}
-                  onChange={e=>set("cycleLength",e.target.value)}
-                  onFocus={e=>e.target.style.borderColor=tokens.lavender}
-                  onBlur={e=>e.target.style.borderColor=tokens.border}/>
-              </div>
-            </div>
- 
+
             {/* Save at bottom of form too */}
             <button onClick={handleSave} style={{
               width:"100%", padding:"14px", marginTop:8,
@@ -411,6 +389,15 @@ export default function Profile() {
         ) : (
           /* ──── VIEW MODE ──── */
           <div>
+            {/* แท็บน้ำหนักออกจากเมนูแล้ว — เข้าจากตรงนี้แทน */}
+            <button onClick={()=>navTo("weight")} style={{
+              width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center",
+              background:tokens.creamSoft, border:`1px solid ${tokens.border}`, borderRadius:16,
+              padding:"13px 16px", marginBottom:12, fontSize:13.5, color:tokens.cocoa,
+              fontFamily:"'DM Sans',sans-serif", cursor:"pointer" }}>
+              <span>📊 {lang==="en" ? "Weight log" : "บันทึกน้ำหนัก"}</span>
+              <span style={{ color:tokens.stone }}>›</span>
+            </button>
             <GoalProgress weight={user.weight} goalWeight={user.goalWeight} tokens={tokens}/>
             <BMIScale bmi={user.bmi??calcBMI(user.weight,user.height)} tokens={tokens}/>
  
@@ -420,7 +407,9 @@ export default function Profile() {
               <InfoRow label={t("profile.goal_weight")} value={`${(+user.goalWeight).toFixed(1)} ${t("common.kg")}`} tokens={tokens}/>
               <InfoRow label={t("profile.height")}      value={`${user.height} ${t("common.cm")}`} tokens={tokens}/>
               <InfoRow label={t("profile.age")}         value={`${user.age} ${lang==="en"?"yrs":"ปี"}`} tokens={tokens}/>
-              <InfoRow label={t("profile.phase")}       value={`${currentPhase.emoji} ${currentPhase.label}`} tokens={tokens} isLast/>
+              <InfoRow label={t("profile.phase")}
+                value={cycleSnapshot ? `${currentPhase.emoji} ${currentPhase.label}` : (lang==="en" ? "Not logged yet" : "ยังไม่ได้บันทึก")}
+                tokens={tokens} isLast/>
             </Card>
  
             <SecLabel text={lang==="en" ? "Daily Nutrition Target" : "เป้าโภชนาการ/วัน"} tokens={tokens}/>
@@ -435,9 +424,17 @@ export default function Profile() {
               borderRadius:20, padding:"14px 16px", marginTop:4 }}>
               <div style={{ fontSize:12, fontWeight:500, color:"#8B4050", marginBottom:6 }}>Danger Zone</div>
               <div style={{ fontSize:12, color:"#8B4050", lineHeight:1.55, marginBottom:12 }}>
-                {t("profile.reset_warn")}
+                {lang==="en"
+                  ? "Health data covers your period logs, cycle settings, moods and weight. Deleted data cannot be recovered."
+                  : "ข้อมูลสุขภาพคือประวัติรอบเดือน การตั้งค่ารอบ อารมณ์ และน้ำหนัก ลบแล้วกู้คืนไม่ได้"}
               </div>
-              <button onClick={()=>setShowReset(true)} style={{
+              <button onClick={()=>setShowReset("health")} style={{
+                width:"100%", padding:"11px", marginBottom:8, background:"transparent", color:"#8B4050",
+                border:`1.5px solid ${tokens.rose}`, borderRadius:14, fontSize:13,
+                fontWeight:500, fontFamily:"'DM Sans',sans-serif", cursor:"pointer" }}>
+                {lang==="en" ? "Delete health data" : "ลบข้อมูลสุขภาพ"}
+              </button>
+              <button onClick={()=>setShowReset("all")} style={{
                 width:"100%", padding:"11px", background:"transparent", color:"#8B4050",
                 border:`1.5px solid ${tokens.rose}`, borderRadius:14, fontSize:13,
                 fontWeight:500, fontFamily:"'DM Sans',sans-serif", cursor:"pointer" }}>
@@ -450,8 +447,16 @@ export default function Profile() {
  
       {showReset && (
         <ResetConfirm
-          onConfirm={()=>{ clearAppStorage(); window.location.reload() }}
-          onClose={()=>setShowReset(false)}
+          title={showReset==="health"
+            ? (lang==="en" ? "Delete health data?" : "ลบข้อมูลสุขภาพ?")
+            : (lang==="en" ? "Reset everything?" : "รีเซ็ตข้อมูลทั้งหมด?")}
+          desc={showReset==="health"
+            ? (lang==="en" ? "Period logs, cycle settings, moods and weight will be deleted. Your profile stays." : "ประวัติรอบเดือน การตั้งค่ารอบ อารมณ์ และน้ำหนักจะถูกลบ โปรไฟล์ยังอยู่")
+            : t("profile.reset_warn")}
+          actionLabel={showReset==="health" ? (lang==="en" ? "Delete" : "ลบ") : (lang==="en" ? "Reset" : "รีเซ็ต")}
+          /* reload เพื่อให้ state ในหน่วยความจำไม่เขียนข้อมูลเก่ากลับลง localStorage */
+          onConfirm={()=>{ showReset==="health" ? clearHealthData() : clearAppStorage(); window.location.reload() }}
+          onClose={()=>setShowReset(null)}
           tokens={tokens}
         />
       )}
