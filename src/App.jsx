@@ -118,6 +118,18 @@ const GLOBAL_CSS=`
   @keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
   @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
   @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ── Phone shell responsive ──
+     กรอบมือถือ 390×844 ใช้โชว์บนจอใหญ่เท่านั้น
+     จอเตี้ยกว่า 900px (เช่นแล็ปท็อป) → สูงเท่าจอ ไม่ให้ปุ่มล่าง/เมนูถูกตัด
+     จอแคบกว่า 500px (มือถือจริง) → เต็มจอ และซ่อน status bar ปลอม */
+  @media (max-height:900px){
+    .phone-shell{height:100dvh!important;border-radius:0!important}
+  }
+  @media (max-width:500px){
+    .phone-shell{width:100vw!important;height:100dvh!important;border-radius:0!important;box-shadow:none!important}
+    .phone-status{display:none!important}
+  }
 `
 function injectGlobalCSS(){
   if(document.getElementById("he-global"))return
@@ -139,10 +151,10 @@ function PhoneShell({children}){
     return()=>clearInterval(id)
   },[])
   return(
-    <div style={{width:390,height:844,background:tokens.creamSoft,borderRadius:52,overflow:"hidden",
+    <div className="phone-shell" style={{width:390,height:844,background:tokens.creamSoft,borderRadius:52,overflow:"hidden",
       boxShadow:`0 0 0 2px ${tokens.cocoa},0 48px 120px rgba(61,46,42,.28),0 8px 24px rgba(61,46,42,.12)`,
       display:"flex",flexDirection:"column",position:"relative"}}>
-      <div style={{height:52,background:tokens.creamSoft,display:"flex",alignItems:"flex-end",
+      <div className="phone-status" style={{height:52,background:tokens.creamSoft,display:"flex",alignItems:"flex-end",
         justifyContent:"space-between",padding:"0 28px 8px",fontSize:12,fontWeight:500,
         color:tokens.cocoa,position:"relative",zIndex:50,flexShrink:0}}>
         <span style={{position:"relative",zIndex:1}}>{time}</span>
