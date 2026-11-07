@@ -32,11 +32,12 @@ const ACTIVITY_OPTS = [
   { val:"4", labelTh:"ออกกำลังกายหนัก 6–7×/สัปดาห์",  labelEn:"Active (6–7×/week)"   },
   { val:"5", labelTh:"นักกีฬา / งานหนักมาก",           labelEn:"Athlete / Hard job"   },
 ]
+/* labelTh/labelEn ต้องตรงกับที่ dropdown และหน้าดูโปรไฟล์อ่าน (เดิมใช้ label เลยแสดงค่าว่าง) */
 const GOAL_OPTS = [
-  { val:"lose_fast", label:"ลดเร็ว (−500 kcal/วัน)"          },
-  { val:"lose_slow", label:"ลดช้าๆ ยั่งยืน (−250 kcal/วัน)"  },
-  { val:"maintain",  label:"รักษาน้ำหนัก"                    },
-  { val:"gain",      label:"เพิ่มกล้ามเนื้อ (+300 kcal/วัน)"  },
+  { val:"lose_fast", labelTh:"ลดเร็ว (−500 kcal/วัน)",         labelEn:"Lose faster (−500 kcal/day)" },
+  { val:"lose_slow", labelTh:"ลดช้าๆ ยั่งยืน (−250 kcal/วัน)", labelEn:"Lose slowly (−250 kcal/day)" },
+  { val:"maintain",  labelTh:"รักษาน้ำหนัก",                   labelEn:"Maintain weight"             },
+  { val:"gain",      labelTh:"เพิ่มกล้ามเนื้อ (+300 kcal/วัน)", labelEn:"Build muscle (+300 kcal/day)" },
 ]
  
 function InfoRow({ label, value, accent, isLast, tokens }) {
